@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>MatruAI | Maternal & Neonatal Clinical Decision Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ─── CSS Reset & Variables ─────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #0a8f78;
+    --teal-dk: #086d5f;
+    --teal-lt: #d0f5f0;
+    --rose: #d946a6;
+    --rose-lt: #fce7f3;
+    --amber: #d97706;
+    --amber-lt: #fef3c7;
+    --green: #16a34a;
+    --green-lt: #dcfce7;
+    --red: #ef4444;
+    --red-lt: #fee2e2;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-head: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--gray-900);
+    background: #fff;
+    overflow-x: hidden;
+  }
+
+  /* ─── Toast / Snackbar ─────────────────────────────────────────── */
+  #toast-container {
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .toast {
+    background: var(--teal); color: #fff; padding: 12px 16px;
+    border-radius: 8px; display: flex; align-items: center; gap: 10px;
+    animation: toast-in .3s cubic-bezier(.34, 1.56, .64, 1) forwards;
+    font-weight: 500; font-size: 13px; box-shadow: var(--shadow-lg);
+  }
+  .toast.success { background: var(--teal-dk); }
+  .toast.warning { background: #b45309; }
+  .toast.error   { background: #b91c1c; }
+  .toast.hiding  { animation: toast-out .3s ease forwards; }
+  .toast-icon { font-size: 16px; flex-shrink: 0; }
+  @keyframes toast-in  { from { opacity:0; transform:translateY(12px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes toast-out { to   { opacity:0; transform:translateY(8px) scale(.96); } }
+
+  /* ─── Layout ────────────────────────────────────────────────────── */
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* Header */
+  #header {
+    background: #fff; border-bottom: 1px solid var(--gray-200);
+    padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .logo-mark {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dk));
+    display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700;
+  }
+  .logo-mark svg { width: 22px; height: 22px; }
+  .brand-text { line-height: 1.2; }
+  .brand-name {
+    font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--gray-900);
+  }
+  .brand-tagline { font-size: 11px; color: var(--gray-500); font-weight: 500; letter-spacing: .3px; }
+  .header-controls { display: flex; align-items: center; gap: 8px; }
+  .status-pill {
+    font-size: 12px; font-weight: 600; padding: 5px 10px;
+    border-radius: 12px; border: 1px solid; display: flex; align-items: center; gap: 6px;
+  }
+  .status-pill.online  { background: var(--green-lt); color: #15803d; border-color: #bbf7d0; }
+  .status-pill.offline { background: var(--amber-lt); color: #92400e; border-color: #fde68a; }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%; animation: pulse-dot 2s infinite;
+  }
+  .status-pill.online  .status-dot { background: var(--green); }
+  .status-pill.offline .status-dot { background: var(--amber); animation: none; }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+  .sync-badge {
+    position: relative; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--teal-lt); color: var(--teal-dk); display: none;
+    align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+  }
+  .sync-badge.show { display: flex; }
+  .sync-badge svg { animation: spin 1.2s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .lang-btn, .menu-btn {
+    padding: 8px 12px; border: 1px solid var(--gray-300);
+    border-radius: 6px; background: #fff; cursor: pointer;
+    font-size: 12px; font-weight: 600; transition: all .2s;
+  }
+  .lang-btn:hover, .menu-btn:hover { background: var(--gray-50); border-color: var(--gray-300); }
+  .menu-btn { padding: 7px 9px; display: none; }
+  @media (max-width: 768px) { .menu-btn { display: flex; } }
+
+  /* Sidebar + Content */
+  #body-wrap { display: flex; flex: 1; }
+  #sidebar {
+    width: 240px; background: #fff; border-right: 1px solid var(--gray-200);
+    overflow-y: auto; transition: transform .3s;
+  }
+  #sidebar.hidden { transform: translateX(-100%); position: fixed; z-index: 90; }
+  @media (max-width: 768px) {
+    #sidebar { position: fixed; width: 240px; height: calc(100vh - 60px); left: 0; top: 60px; }
+  }
+  .nav-section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--gray-400); padding: 16px 16px 8px;
+  }
+  .nav-btn {
+    width: calc(100% - 16px); margin: 0 8px; padding: 10px 12px;
+    border-radius: 6px; border: none; background: transparent;
+    color: var(--gray-700); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 10px;
+  }
+  .nav-btn:hover { background: var(--gray-50); color: var(--gray-900); }
+  .nav-btn.active { background: var(--teal-lt); color: var(--teal-dk); font-weight: 600; }
+  .nav-btn .nav-icon {
+    width: 24px; height: 24px; border-radius: 4px;
+    background: transparent; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; transition: all .2s;
+  }
+  .nav-btn.active .nav-icon { background: var(--teal); color: #fff; }
+  .nav-btn .nav-label { flex: 1; }
+  .sidebar-footer {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 12px; border-top: 1px solid var(--gray-200);
+  }
+  .sidebar-sync-card {
+    background: var(--gray-50); padding: 10px; border-radius: 6px; font-size: 12px;
+  }
+  .sidebar-sync-card.online-card  { background: var(--green-lt); color: #15803d; }
+  .sidebar-sync-card.offline-card { background: var(--amber-lt); color: #92400e; }
+  .sidebar-sync-card strong { font-weight: 700; display: block; margin-bottom: 2px; }
+
+  /* Main Content */
+  #main-content {
+    flex: 1; overflow-y: auto; padding: 24px 32px;
+  }
+  @media (max-width: 768px) { #main-content { padding: 16px 16px 80px; } }
+
+  /* Bottom Nav (mobile) */
+  #bottom-nav {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff; border-top: 1px solid var(--gray-200);
+    grid-template-columns: repeat(5, 1fr); z-index: 80;
+  }
+  @media (max-width: 768px) { #bottom-nav { display: grid; } }
+  .bottom-nav-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px; border: none; background: transparent; cursor: pointer;
+    color: var(--gray-500); font-size: 11px; font-weight: 500; transition: all .2s;
+  }
+  .bottom-nav-btn .bnb-icon { font-size: 20px; line-height: 1; margin-bottom: 2px; }
+  .bottom-nav-btn.active { color: var(--teal); }
+
+  /* Page overlay for mobile sidebar */
+  #overlay {
+    display: none; position: fixed; top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.3); z-index: 89;
+  }
+  #overlay.show { display: block; }
+
+  /* ─── Page Sections ──────────────────────────────────────────────── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ─── Dashboard ─────────────────────────────────────────────────── */
+  .page-header { margin-bottom: 24px; }
+  .page-title {
+    font-family: var(--font-head); font-size: 24px;
+    font-weight: 700; color: var(--gray-900);
+  }
+  .page-subtitle { font-size: 14px; color: var(--gray-500); margin-top: 4px; }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px; margin-bottom: 28px;
+  }
+  .stat-card {
+    background: #fff; border: 1px solid var(--gray-200);
+    border-radius: 12px; padding: 16px; transition: all .2s;
+  }
+  .stat-card:hover { box-shadow: var(--shadow-md); }
+  .stat-label { font-size: 12px; font-weight: 600; color: var(--gray-500); letter-spacing: .3px; text-transform: uppercase; }
+  .stat-value { font-family: var(--font-head); font-size: 32px; font-weight: 700; color: var(--gray-900); margin: 6px 0 2px; }
+  .stat-sub { font-size: 12px; color: var(--gray-400); }
+  .stat-card.teal .stat-value { color: var(--teal); }
+  .stat-card.rose .stat-value { color: var(--rose); }
+  .stat-card.amber .stat-value { color: #d97706; }
+  .stat-card.green .stat-value { color: #16a34a; }
+
+  .action-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px; margin-bottom: 28px;
+  }
+  .action-card {
+    position: relative; padding: 24px;
+    border-radius: 12px; cursor: pointer; transition: all .2s;
+  }
+  .action-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 12px; opacity: 0; transition: opacity .2s;
+  }
+  .action-card.antenatal { background: linear-gradient(135deg, var(--teal) 0%, #0a6e5e 100%); color: #fff; }
+  .action-card.neonatal  { background: linear-gradient(135deg, var(--rose) 0%, #c23160 100%); color: #fff; }
+  .action-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .action-card:active { transform: translateY(0); }
+  .ac-icon { font-size: 32px; margin-bottom: 12px; display: block; }
+  .ac-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .ac-desc { font-size: 13px; opacity: .85; }
+  .ac-arrow { position: absolute; right: 20px; bottom: 20px; font-size: 20px; opacity: .7; }
+
+  .section-title {
+    font-family: var(--font-head); font-size: 16px; font-weight: 700;
+    color: var(--gray-900); margin-bottom: 16px; display: flex; justify-content: space-between;
+  }
+  .section-title a { font-size: 13px; font-weight: 600; color: var(--teal); text-decoration: none; cursor: pointer; }
+  .section-title a:hover { text-decoration: underline; }
+
+  /* Recent patients list */
+  .patient-row {
+    background: #fff; border: 1px solid var(--gray-200); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 8px; display: flex;
+    align-items: center; gap: 12px; transition: all .2s;
+  }
+  .patient-row:hover { box-shadow: var(--shadow-sm); }
+  .patient-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; flex-shrink: 0;
+  }
+  .patient-avatar.antenatal { background: var(--teal-lt); color: var(--teal-dk); }
+  .patient-avatar.neonatal  { background: var(--rose-lt);  color: var(--rose); }
+  .patient-info { flex: 1; min-width: 0; }
+  .patient-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+  .patient-meta { font-size: 12px; color: var(--gray-500); }
+  .risk-badge {
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 12px;
+  }
+  .risk-critical { background: var(--red-lt); color: #b91c1c; }
+  .risk-high     { background: #fee2e2; color: #b91c1c; }
+  .risk-moderate { background: var(--amber-lt); color: #92400e; }
+  .risk-low      { background: var(--green-lt); color: #15803d; }
+
+  /* ─── Assessment Wizard ─────────────────────────────────────────── */
+  .wizard-header {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+  }
+  .back-btn {
+    padding: 8px 12px; border: 1px solid var(--gray-300);
+    border-radius: 6px; background: #fff; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--gray-700);
+    transition: all .2s;
+  }
+  .back-btn:hover { background: var(--gray-50); border-color: var(--gray-300); color: var(--gray-900); }
+  .wizard-title { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--gray-900); }
+  .wizard-subtitle { font-size: 13px; color: var(--gray-500); }
+
+  /* Step progress */
+  .step-progress {
+    display: flex; gap: 8px; margin-bottom: 24px; justify-content: center;
+  }
+  .step-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative;
+  }
+  .step-circle {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2px solid var(--gray-300); display: flex;
+    align-items: center; justify-content: center; font-weight: 700; font-size: 12px;
+    color: var(--gray-400); background: #fff;
+  }
+  .step-circle.done    { background: var(--teal);     border-color: var(--teal);     color: #fff; }
+  .step-circle.active  { background: var(--gray-900); border-color: var(--gray-900); color: #fff; }
+  .step-label {
+    font-size: 11px; font-weight: 600; text-align: center; color: var(--gray-500);
+  }
+  .step-label.active  { color: var(--gray-900); }
+  .step-label.done    { color: var(--teal); }
+  .step-connector {
+    position: absolute; top: 20px; left: 50%; width: 120px; height: 2px;
+    background: var(--gray-200); transform: translateX(-120%);
+  }
+  .step-connector.done { background: var(--teal); }
+
+  /* Form Cards */
+  .form-card {
+    background: #fff; border: 1px solid var(--gray-200);
+    border-radius: 12px; padding: 24px; margin-bottom: 20px;
+  }
+  .form-card-title {
+    font-family: var(--font-head); font-size: 16px; font-weight: 700;
+    color: var(--gray-900); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .form-card-title .fct-icon {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: var(--teal-lt); display: flex; align-items: center;
+    justify-content: center; font-size: 18px;
+  }
+  .form-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label {
+    font-size: 13px; font-weight: 600; color: var(--gray-900);
+  }
+  .form-label .required { color: var(--rose); }
+  .form-input, .form-select {
+    padding: 10px 12px; border: 1px solid var(--gray-300);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+    transition: all .2s;
+  }
+  .form-input:focus, .form-select:focus {
+    outline: none; border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(10, 143, 120, .1);
+  }
+  .form-input.error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
+  .form-error { font-size: 12px; color: var(--red); font-weight: 500; display: none; }
+  .form-hint  { font-size: 12px; color: var(--gray-400); }
+
+  /* Symptom checklist */
+  .symptoms-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .symptom-item {
+    border: 1px solid var(--gray-300); border-radius: 8px;
+    padding: 10px; cursor: pointer; transition: all .2s; background: #fff;
+  }
+  .symptom-item:hover { border-color: var(--teal-lt); background: var(--teal-lt); }
+  .symptom-item.checked {
+    background: #fff; border-color: var(--rose);
+  }
+  .symptom-item .sym-check {
+    width: 18px; height: 18px; border: 2px solid var(--gray-300);
+    border-radius: 4px; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; margin-bottom: 6px;
+    transition: all .2s;
+  }
+  .symptom-item.checked .sym-check { background: var(--rose); border-color: var(--rose); color: #fff; }
+  .symptom-item .sym-label { font-size: 13px; font-weight: 500; color: var(--gray-700); }
+  .symptom-item.checked .sym-label { color: #b91c1c; font-weight: 600; }
+
+  /* Wizard footer */
+  .wizard-footer {
+    display: flex; gap: 12px; justify-content: space-between;
+    margin-top: 28px; flex-wrap: wrap;
+  }
+  .btn {
+    padding: 10px 24px; border: 1px solid var(--gray-300);
+    border-radius: 6px; background: #fff; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: all .2s;
+  }
+  .btn-primary { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .btn-primary:hover { background: var(--teal-dk); }
+  .btn-secondary { background: var(--gray-100); color: var(--gray-700); }
+  .btn-secondary:hover { background: var(--gray-200); }
+  .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+  .btn-danger:hover { background: #dc2626; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Risk Result Panel */
+  .result-panel {
+    border-radius: 12px; padding: 24px; margin-bottom: 20px; color: #fff;
+  }
+  .result-panel.critical { background: linear-gradient(135deg, #7f1d1d, #b91c1c); }
+  .result-panel.high     { background: linear-gradient(135deg, #991b1b, #dc2626); }
+  .result-panel.moderate { background: linear-gradient(135deg, #78350f, #d97706); }
+  .result-panel.low      { background: linear-gradient(135deg, #14532d, #16a34a); }
+  .result-title { font-family: var(--font-head); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .result-sub   { font-size: 14px; opacity: .85; }
+  .result-badge {
+    display: inline-block; font-size: 12px; font-weight: 700;
+    padding: 4px 12px; border-radius: 12px; background: rgba(255,255,255,.2); margin-top: 10px;
+  }
+  .recommendations-list {
+    list-style: none; margin-top: 16px;
+  }
+  .recommendations-list li {
+    font-size: 13px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.1);
+    display: flex; gap: 10px;
+  }
+  .recommendations-list li:last-child { border-bottom: none; }
+  .rec-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; background: rgba(255,255,255,.4); }
+
+  /* Loading state */
+  .spinner {
+    width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.2);
+    border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite;
+  }
+
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── Toast Container ─────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ─── Overlay (mobile sidebar) ───────────────────────────────── -->
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<div id="app">
+
+  <!-- ─── Header ──────────────────────────────────────────────────── -->
+  <header id="header">
+    <div class="header-brand" onclick="navigate('dashboard')">
+      <div class="logo-mark">M</div>
+      <div class="brand-text">
+        <div class="brand-name">MatruAI</div>
+        <div class="brand-tagline" data-i18n="clinicalDecisionSupport">Clinical Decision Support</div>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="status-pill" id="status-pill">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text" data-i18n="offline">Offline</span>
+      </div>
+      <div class="sync-badge" id="sync-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <button class="lang-btn" onclick="toggleLang()">EN</button>
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+    </div>
+  </header>
+
+  <div id="body-wrap">
+
+    <!-- ─── Sidebar Navigation ───────────────────────────────────────── -->
+    <aside id="sidebar">
+      <div style="padding: 16px 0;">
+        <div class="nav-section-label" data-i18n="menu">Menu</div>
+        <button class="nav-btn active" data-page="dashboard" onclick="navigate('dashboard', this)">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label" data-i18n="dashboard">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-page="assessment" onclick="navigate('assessment', this)">
+          <span class="nav-icon">🩺</span>
+          <span class="nav-label" data-i18n="assessment">Assessment</span>
+        </button>
+        <button class="nav-btn" data-page="patients" onclick="navigate('patients', this)">
+          <span class="nav-icon">👥</span>
+          <span class="nav-label" data-i18n="patients">Patients</span>
+        </button>
+        <button class="nav-btn" data-page="abdm" onclick="navigate('abdm', this)">
+          <span class="nav-icon">🔐</span>
+          <span class="nav-label" data-i18n="abdm">ABDM</span>
+        </button>
+        <button class="nav-btn" data-page="settings" onclick="navigate('settings', this)">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label" data-i18n="settings">Settings</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- ─── Main Content ───────────────────────────────────────────── -->
+    <main id="main-content">
+
+      <!-- ═══ DASHBOARD PAGE ═════════════════════════════════════════ -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-header">
+          <div class="page-title" id="dash-greeting">Good morning 👋</div>
+          <div class="page-subtitle" data-i18n="yourPortal">Your maternal and neonatal health portal</div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card teal">
+            <div class="stat-label" data-i18n="totalCases">Total Cases</div>
+            <div class="stat-value" id="stat-total">0</div>
+          </div>
+          <div class="stat-card rose">
+            <div class="stat-label" data-i18n="highRisk">High Risk</div>
+            <div class="stat-value" id="stat-highrisk">0</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label" data-i18n="pendingSync">Pending Sync</div>
+            <div class="stat-value" id="stat-pending">0</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label" data-i18n="synced">Synced</div>
+            <div class="stat-value" id="stat-synced">0</div>
+          </div>
+        </div>
+
+        <div class="action-cards">
+          <div class="action-card antenatal" onclick="startAssessment('antenatal')">
+            <span class="ac-icon">🤰</span>
+            <div class="ac-title" data-i18n="antenatal">Antenatal</div>
+            <div class="ac-desc" data-i18n="assessMaternal">Assess maternal health during pregnancy</div>
+            <span class="ac-arrow">→</span>
+          </div>
+          <div class="action-card neonatal" onclick="startAssessment('neonatal')">
+            <span class="ac-icon">👶</span>
+            <div class="ac-title" data-i18n="neonatal">Neonatal</div>
+            <div class="ac-desc" data-i18n="assessNewborn">Assess newborn health status</div>
+            <span class="ac-arrow">→</span>
+          </div>
+        </div>
+
+        <div class="section-title" data-i18n="recentAssessments">
+          Recent Assessments
+        </div>
+        <div id="recent-patients-list"></div>
+      </div>
+
+      <!-- ═══ ASSESSMENT WIZARD PAGE ════════════════════════════════ -->
+      <div id="assessment-type-selector" class="assessment-selector">
+        <div class="page-header">
+          <div class="page-title">Select Assessment Type</div>
+        </div>
+        <div class="action-cards">
+          <div class="action-card antenatal" onclick="startAssessment('antenatal')">
+            <span class="ac-icon">🤰</span>
+            <div class="ac-title">Antenatal Assessment</div>
+            <div class="ac-desc">Assess maternal health during pregnancy</div>
+            <span class="ac-arrow">→</span>
+          </div>
+          <div class="action-card neonatal" onclick="startAssessment('neonatal')">
+            <span class="ac-icon">👶</span>
+            <div class="ac-title">Neonatal Assessment</div>
+            <div class="ac-desc">Assess newborn health status</div>
+            <span class="ac-arrow">→</span>
+          </div>
+        </div>
+      </div>
+      
+      <div id="page-assessment" class="page">
+        <div class="wizard-header">
+          <button class="back-btn" onclick="wizardPrev()">← Back</button>
+          <div>
+            <div class="wizard-title" id="wizard-type-title">Assessment</div>
+            <div class="wizard-subtitle">
+              Step <span id="step-num">1</span> of <span id="step-total">5</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-progress" id="step-progress"></div>
+
+        <div id="wizard-content"></div>
+
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" id="btn-prev" onclick="wizardPrev()">← Back</button>
+          <button class="btn btn-primary" id="btn-next" onclick="wizardNext()">Continue →</button>
+        </div>
+      </div>
+
+      <!-- ═══ PATIENTS PAGE ═════════════════════════════════════════ -->
+      <div id="page-patients" class="page">
+        <div class="page-header">
+          <div class="page-title" data-i18n="patientRecords">Patient Records</div>
+          <div class="page-subtitle" data-i18n="viewManage">View and manage all assessments</div>
+        </div>
+        <div id="patients-container"></div>
+      </div>
+
+      <!-- ═══ ABDM PAGE ═════════════════════════════════════════════ -->
+      <div id="page-abdm" class="page">
+        <div class="page-header">
+          <div class="page-title" data-i18n="abdmIntegration">ABDM Integration</div>
+          <div class="page-subtitle" data-i18n="ayushman">Ayushman Bharat Digital Mission</div>
+        </div>
+        <div class="form-card">
+          <p>ABDM integration coming soon...</p>
+        </div>
+      </div>
+
+      <!-- ═══ SETTINGS PAGE ═════════════════════════════════════════ -->
+      <div id="page-settings" class="page">
+        <div class="page-header">
+          <div class="page-title" data-i18n="settings">Settings</div>
+          <div class="page-subtitle" data-i18n="managePreferences">Manage your preferences</div>
+        </div>
+        <div class="form-card">
+          <div class="button-group">
+            <button class="btn btn-secondary" onclick="exportAsCSV()">📊 Export as CSV</button>
+            <button class="btn btn-secondary" onclick="exportAsJSON()">📋 Export as JSON</button>
+            <button class="btn btn-secondary" onclick="exportAsPDF()">📄 Export as PDF</button>
+          </div>
+          <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
+        </div>
+        </div>
+      </div>
+
+    </main><!-- end main-content -->
+
+  </div><!-- end body-wrap -->
+
+  <!-- Bottom Nav (Mobile) -->
+  <nav id="bottom-nav">
+    <button class="bottom-nav-btn active" data-page="dashboard" onclick="navigate('dashboard', this)">
+      <span class="bnb-icon">📊</span>
+      <span>Dashboard</span>
+    </button>
+    <button class="bottom-nav-btn" data-page="assessment" onclick="navigate('assessment', this)">
+      <span class="bnb-icon">🩺</span>
+      <span>Assess</span>
+    </button>
+    <button class="bottom-nav-btn" data-page="patients" onclick="navigate('patients', this)">
+      <span class="bnb-icon">👥</span>
+      <span>Patients</span>
+    </button>
+    <button class="bottom-nav-btn" data-page="abdm" onclick="navigate('abdm', this)">
+      <span class="bnb-icon">🔐</span>
+      <span>ABDM</span>
+    </button>
+    <button class="bottom-nav-btn" data-page="settings" onclick="navigate('settings', this)">
+      <span class="bnb-icon">⚙️</span>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+</div><!-- end app -->
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   MatruAI with FastAPI Backend Integration
+   Backend: http://localhost:8000/api/assess
+════════════════════════════════════════════════════════════════ */
+
+const DB_NAME   = 'matruai_db';
+const STORE_KEY = 'matruai_assessments';
+const API_URL   = 'http://localhost:8000/api/assess';
+
+let db           = null;
+let currentPage  = 'dashboard';
+let wizardType   = 'antenatal';
+let wizardStep   = 0;
+let wizardData   = {};
+let currentLang  = 'en';
+let isOnline     = navigator.onLine;
+
+/* ─── Translations ─────────────────────────────────────────────── */
+const translations = {
+  en: {
+    // Header
+    clinicalDecisionSupport: 'Clinical Decision Support',
+    online: 'Online',
+    offline: 'Offline',
+    // Sidebar
+    menu: 'Menu',
+    dashboard: 'Dashboard',
+    assessment: 'Assessment',
+    patients: 'Patients',
+    abdm: 'ABDM',
+    settings: 'Settings',
+    // Dashboard
+    goodMorning: 'Good morning',
+    goodAfternoon: 'Good afternoon',
+    goodEvening: 'Good evening',
+    yourPortal: 'Your maternal and neonatal health portal',
+    totalCases: 'Total Cases',
+    highRisk: 'High Risk',
+    pendingSync: 'Pending Sync',
+    synced: 'Synced',
+    antenatal: 'Antenatal',
+    assessMaternal: 'Assess maternal health during pregnancy',
+    neonatal: 'Neonatal',
+    assessNewborn: 'Assess newborn health status',
+    recentAssessments: 'Recent Assessments',
+    noAssessments: 'No assessments yet',
+    // Assessment
+    antenatalAssessment: 'Antenatal Assessment',
+    neonatalAssessment: 'Neonatal Assessment',
+    stepOf: 'Step',
+    patientInformation: 'Patient Information',
+    patientName: 'Patient Name',
+    babyName: 'Baby Name',
+    motherAge: 'Mother Age',
+    age: 'Age',
+    subCenter: 'Sub-center',
+    contact: 'Contact',
+    required: 'required',
+    vitalSigns: 'Vital Signs',
+    systolicBP: 'Systolic BP (mmHg)',
+    diastolicBP: 'Diastolic BP (mmHg)',
+    hemoglobin: 'Hemoglobin (g/dL)',
+    temperature: 'Temperature (°C)',
+    heartRate: 'Heart Rate (bpm)',
+    respRate: 'Respiratory Rate',
+    muac: 'MUAC (cm)',
+    pregnancyDetails: 'Pregnancy Details',
+    weeksGestation: 'Weeks of Gestation',
+    lmp: 'Last Menstrual Period',
+    fetalMovement: 'Fetal Movement',
+    parity: 'Parity (Gravida/Para)',
+    normal: 'Normal',
+    reduced: 'Reduced',
+    absent: 'Absent',
+    symptoms: 'Symptoms & Findings',
+    recommendations: 'Recommendations',
+    result: 'Result',
+    prevButton: '← Previous',
+    continueButton: 'Continue →',
+    cancelButton: '✕ Cancel',
+    saveFinish: '✅ Save & Finish',
+    newAssessment: '🔄 New Assessment',
+    // Pages
+    patientRecords: 'Patient Records',
+    viewManage: 'View and manage all assessments',
+    abdmIntegration: 'ABDM Integration',
+    ayushman: 'Ayushman Bharat Digital Mission',
+    comingSoon: 'ABDM integration coming soon...',
+    managePreferences: 'Manage your preferences',
+    clearAllData: 'Clear All Data',
+    // Results
+    immediateReferral: '⚠ IMMEDIATE REFERRAL RECOMMENDED',
+    routineCare: '✅ ROUTINE CARE',
+    assessmentCompleted: '✅ Assessment completed!',
+    // Table Headers
+    name: 'Patient Name',
+    type: 'Type',
+    riskLevel: 'Risk Level',
+    date: 'Date',
+    syncStatus: 'Sync Status'
+  },
+  hi: {
+    // Header
+    clinicalDecisionSupport: 'नैदानिक निर्णय सहायता',
+    online: 'ऑनलाइन',
+    offline: 'ऑफ़लाइन',
+    // Sidebar
+    menu: 'मेनू',
+    dashboard: 'डैशबोर्ड',
+    assessment: 'आकलन',
+    patients: 'रोगी',
+    abdm: 'ABDM',
+    settings: 'सेटिंग्स',
+    selectAssessmentType: 'आकलन प्रकार चुनें',
+    // Dashboard
+    goodMorning: 'सुप्रभात',
+    goodAfternoon: 'नमस्ते',
+    goodEvening: 'शुभ संध्या',
+    yourPortal: 'आपका मातृत्व और नवजात स्वास्थ्य पोर्टल',
+    totalCases: 'कुल केस',
+    highRisk: 'उच्च जोखिम',
+    pendingSync: 'सिंक लंबित',
+    synced: 'सिंक किया गया',
+    antenatal: 'प्रसवपूर्व',
+    assessMaternal: 'गर्भावस्था के दौरान मातृ स्वास्थ्य का आकलन करें',
+    neonatal: 'नवजात',
+    assessNewborn: 'नवजात स्वास्थ्य स्थिति का आकलन करें',
+    recentAssessments: 'हाल के आकलन',
+    noAssessments: 'कोई आकलन नहीं',
+    // Assessment
+    antenatalAssessment: 'प्रसवपूर्व आकलन',
+    neonatalAssessment: 'नवजात आकलन',
+    stepOf: 'चरण',
+    patientInformation: 'रोगी की जानकारी',
+    patientName: 'रोगी का नाम',
+    babyName: 'बच्चे का नाम',
+    motherAge: 'माता की आयु',
+    age: 'आयु',
+    subCenter: 'उप-केंद्र',
+    contact: 'संपर्क',
+    required: 'आवश्यक',
+    vitalSigns: 'महत्वपूर्ण संकेत',
+    systolicBP: 'सिस्टोलिक BP (mmHg)',
+    diastolicBP: 'डायस्टोलिक BP (mmHg)',
+    hemoglobin: 'हीमोग्लोबिन (g/dL)',
+    temperature: 'तापमान (°C)',
+    heartRate: 'हृदय गति (bpm)',
+    respRate: 'श्वसन दर',
+    muac: 'MUAC (cm)',
+    pregnancyDetails: 'गर्भावस्था विवरण',
+    weeksGestation: 'गर्भावस्था के सप्ताह',
+    lmp: 'अंतिम मासिक धर्म',
+    fetalMovement: 'भ्रूण की गति',
+    parity: 'Parity (Gravida/Para)',
+    normal: 'सामान्य',
+    reduced: 'कम',
+    absent: 'अनुपस्थित',
+    symptoms: 'लक्षण और निष्कर्ष',
+    recommendations: 'सिफारिशें',
+    result: 'परिणाम',
+    prevButton: '← पिछला',
+    continueButton: 'जारी रखें →',
+    cancelButton: '✕ रद्द करें',
+    saveFinish: '✅ सहेजें और समाप्त करें',
+    newAssessment: '🔄 नया आकलन',
+    // Pages
+    patientRecords: 'रोगी रिकॉर्ड',
+    viewManage: 'सभी आकलनों को देखें और प्रबंधित करें',
+    abdmIntegration: 'ABDM एकीकरण',
+    ayushman: 'आयुष्मान भारत डिजिटल मिशन',
+    comingSoon: 'ABDM एकीकरण जल्द आ रहा है...',
+    managePreferences: 'अपनी प्राथमिकताएं प्रबंधित करें',
+    clearAllData: 'सभी डेटा साफ़ करें',
+    // Results
+    immediateReferral: '⚠ तत्काल रेफरल अनुशंसित',
+    routineCare: '✅ नियमित देखभाल',
+    assessmentCompleted: '✅ आकलन पूर्ण!',
+    // Table Headers
+    name: 'रोगी का नाम',
+    type: 'प्रकार',
+    riskLevel: 'जोखिम स्तर',
+    date: 'तारीख',
+    syncStatus: 'सिंक स्थिति',
+    // Wizard
+    antenatalAssessment: 'प्रसवपूर्व आकलन',
+    neonatalAssessment: 'नवजात आकलन',
+    step: 'चरण',
+    of: 'का',
+    patientInfo: 'रोगी जानकारी',
+    vitals: 'महत्वपूर्ण संकेत',
+    pregnancy: 'गर्भावस्था',
+    symptoms: 'लक्षण',
+    result: 'परिणाम',
+    babyInfo: 'बेबी जानकारी'
+  }
+};
+
+function t(key) {
+  return translations[currentLang][key] || translations['en'][key] || key;
+}
+
+/* ─── State ────────────────────────────────────────────────────── */
+async function saveRecord(record) {
+  const all = getLocalRecords();
+  const idx = all.findIndex(r => r.id === record.id);
+  if (idx >= 0) all[idx] = record; else all.push(record);
+  localStorage.setItem(STORE_KEY, JSON.stringify(all));
+}
+
+function getLocalRecords() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+/* ─── Network Status ────────────────────────────────────────────── */
+function updateNetworkUI(online) {
+  isOnline = online;
+  const pill = document.getElementById('status-pill');
+  const txt  = document.getElementById('status-text');
+  const dot  = pill.querySelector('.status-dot');
+
+  if (online) {
+    pill.className = 'status-pill online';
+    txt.textContent = 'Online';
+    dot.style.background = 'var(--green)';
+    autoSync();
+  } else {
+    pill.className = 'status-pill offline';
+    txt.textContent = 'Offline';
+    dot.style.background = 'var(--amber)';
+  }
+}
+
+async function autoSync() {
+  const records = await getAllRecords();
+  const pending = records.filter(r => r.syncStatus === 'pending');
+  if (!pending.length) { updateSyncBadge(0); return; }
+  
+  await new Promise(r => setTimeout(r, 1400));
+  for (const rec of pending) rec.syncStatus = 'synced';
+  updateSyncBadge(0);
+  showToast(`${pending.length} record${pending.length > 1 ? 's' : ''} synced`, 'success');
+  refreshStats();
+}
+
+async function getAllRecords() {
+  return getLocalRecords();
+}
+
+function updateSyncBadge(count) {
+  const badge = document.getElementById('sync-badge');
+  if (count > 0) {
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+window.addEventListener('online',  () => updateNetworkUI(true));
+window.addEventListener('offline', () => updateNetworkUI(false));
+
+/* ─── Toast Notifications ──────────────────────────────────────── */
+function showToast(msg, type = 'success', duration = 3000) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  const icons  = { success: '✓', warning: '⚠', error: '✕', info: 'ℹ' };
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || '✓'}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    setTimeout(() => toast.remove(), 350);
+  }, duration);
+}
+
+/* ─── Navigation ────────────────────────────────────────────────── */
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelectorAll('.nav-btn, .bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`[data-page="${page}"]`).forEach(b => b.classList.add('active'));
+  closeSidebar();
+
+  if (page === 'patients') renderPatientsTable();
+  if (page === 'dashboard') refreshStats();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+/* ─── Dashboard ─────────────────────────────────────────────────── */
+async function refreshStats() {
+  const records = await getAllRecords();
+  const total     = records.length;
+  const highRisk  = records.filter(r => ['high','critical'].includes(r.riskLevel)).length;
+  const pending   = records.filter(r => r.syncStatus === 'pending').length;
+  const synced    = records.filter(r => r.syncStatus === 'synced').length;
+
+  document.getElementById('stat-total').textContent    = total;
+  document.getElementById('stat-highrisk').textContent = highRisk;
+  document.getElementById('stat-pending').textContent  = pending;
+  document.getElementById('stat-synced').textContent   = synced;
+
+  updateSyncBadge(pending);
+  renderRecentPatients(records);
+}
+
+function renderRecentPatients(records) {
+  const container = document.getElementById('recent-patients-list');
+  if (!records.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--gray-500);padding:24px;">No assessments yet</div>';
+    return;
+  }
+  const recent = [...records].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5);
+  container.innerHTML = recent.map(r => `
+    <div class="patient-row">
+      <div class="patient-avatar ${r.type}">${r.type === 'antenatal' ? '🤰' : '👶'}</div>
+      <div class="patient-info">
+        <div class="patient-name">${r.patientName}</div>
+        <div class="patient-meta">${new Date(r.createdAt).toLocaleDateString()} • ${r.subCenter}</div>
+      </div>
+      <div class="risk-badge risk-${r.riskLevel}">${r.riskLevel.toUpperCase()}</div>
+    </div>
+  `).join('');
+}
+
+function greet() {
+  const h = new Date().getHours();
+  const key = h < 12 ? 'goodMorning' : h < 17 ? 'goodAfternoon' : 'goodEvening';
+  document.getElementById('dash-greeting').textContent = `${t(key)} 👋`;
+}
+
+/* ─── Export Functions ──────────────────────────────────────── */
+function exportAsCSV() {
+  const records = getLocalRecords();
+  if (!records.length) { showToast('No records to export', 'warning'); return; }
+  
+  let csv = 'Patient Name,Type,Risk Level,Date,ABHA Number,Contact,Sub-Center\n';
+  records.forEach(r => {
+    const date = new Date(r.createdAt).toLocaleDateString();
+    const abha = r.wizardData?.abha || '';
+    const contact = r.wizardData?.contact || '';
+    const subCenter = r.wizardData?.subCenter || '';
+    csv += `"${r.patientName}",${r.type},${r.riskLevel},${date},${abha},${contact},"${subCenter}"\n`;
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `patient-records-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+  showToast('CSV exported successfully', 'success');
+}
+
+function exportAsJSON() {
+  const records = getLocalRecords();
+  if (!records.length) { showToast('No records to export', 'warning'); return; }
+  
+  const json = JSON.stringify(records, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `patient-records-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+  showToast('JSON exported successfully', 'success');
+}
+
+function exportAsPDF() {
+  const records = getLocalRecords();
+  if (!records.length) { showToast('No records to export', 'warning'); return; }
+  
+  let html = '<html><head><title>Patient Records Report</title>';
+  html += '<style>body{font-family:Arial;margin:20px;}table{width:100%;border-collapse:collapse;margin-top:20px;}';
+  html += 'th,td{border:1px solid #ddd;padding:8px;text-align:left;}th{background:#0a8f78;color:white;}</style>';
+  html += '</head><body>';
+  html += '<h1>Patient Records Report</h1>';
+  html += `<p>Generated: ${new Date().toLocaleString()}</p>`;
+  html += '<p>Total Records: ' + records.length + '</p>';
+  html += '<table><tr><th>Patient</th><th>Type</th><th>Risk</th><th>Date</th><th>ABHA</th><th>Contact</th></tr>';
+  
+  records.forEach(r => {
+    const date = new Date(r.createdAt).toLocaleDateString();
+    const abha = r.wizardData?.abha || '-';
+    const contact = r.wizardData?.contact || '-';
+    html += `<tr><td>${r.patientName}</td><td>${r.type}</td><td>${r.riskLevel}</td><td>${date}</td><td>${abha}</td><td>${contact}</td></tr>`;
+  });
+  
+  html += '</table></body></html>';
+  const printWindow = window.open('', '', 'height=600,width=800');
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.print();
+  showToast('PDF opened for printing', 'success');
+}
+
+function clearAllData() {
+  localStorage.removeItem(STORE_KEY);
+  showToast('All data cleared', 'success');
+  refreshStats();
+}
+
+/* ─── Assessment Wizard ──────────────────────────────────────────── */
+function startAssessment(type) {
+  wizardType = type;
+  wizardStep = 0;
+  wizardData = {};
+  navigate('assessment');
+  
+  // Hide selector, show wizard
+  const selector = document.getElementById('assessment-type-selector');
+  const container = document.getElementById('wizard-container');
+  if (selector) selector.style.display = 'none';
+  if (container) container.style.display = 'block';
+  
+  document.getElementById('wizard-type-title').textContent = 
+    t(type === 'antenatal' ? 'antenatalAssessment' : 'neonatalAssessment');
+  renderWizardStep();
+}
+
+const ANTENATAL_STEPS = [
+  { id: 'patient',     label: 'Patient',    icon: '👤' },
+  { id: 'vitals',      label: 'Vitals',     icon: '📊' },
+  { id: 'pregnancy',   label: 'Pregnancy',  icon: '🤰' },
+  { id: 'symptoms',    label: 'Symptoms',   icon: '🩺' },
+  { id: 'result',      label: 'Result',     icon: '📋' },
+];
+
+const NEONATAL_STEPS = [
+  { id: 'patient',     label: 'Baby Info',  icon: '👶' },
+  { id: 'vitals',      label: 'Vitals',     icon: '📊' },
+  { id: 'symptoms',    label: 'Symptoms',   icon: '🩺' },
+  { id: 'result',      label: 'Result',     icon: '📋' },
+];
+
+function getSteps() {
+  return wizardType === 'antenatal' ? ANTENATAL_STEPS : NEONATAL_STEPS;
+}
+
+function renderWizardStep() {
+  const steps = getSteps();
+  const stepDisplay = document.querySelector('[data-i18n="stepCounter"] .step-num') || document.createElement('div');
+  document.getElementById('step-num').textContent   = wizardStep + 1;
+  document.getElementById('step-total').textContent = steps.length;
+  // Update step display label
+  const stepLabel = document.querySelector('.step-counter');
+  if (stepLabel) {
+    stepLabel.innerHTML = `${t('step')} <span id="step-num">${wizardStep + 1}</span> ${t('of')} <span id="step-total">${steps.length}</span>`;
+  }
+
+  let progressHtml = '';
+  steps.forEach((s, i) => {
+    const done = i < wizardStep;
+    const active = i === wizardStep;
+    progressHtml += `
+      <div class="step-item" style="position:relative;">
+        <div class="step-circle ${done ? 'done' : active ? 'active' : ''}">${i + 1}</div>
+        <div class="step-label ${active ? 'active' : done ? 'done' : ''}">${s.label}</div>
+        ${i < steps.length - 1 ? `<div class="step-connector ${done ? 'done' : ''}"></div>` : ''}
+      </div>
+    `;
+  });
+  document.getElementById('step-progress').innerHTML = progressHtml;
+
+  const step = steps[wizardStep];
+  let html = '';
+
+  if (step.id === 'patient') {
+    html = renderPatientStep();
+  } else if (step.id === 'vitals') {
+    html = renderVitalsStep();
+  } else if (step.id === 'pregnancy') {
+    html = renderPregnancyStep();
+  } else if (step.id === 'symptoms') {
+    html = renderSymptomsStep();
+  } else if (step.id === 'result') {
+    html = renderResultStep();
+  }
+
+  document.getElementById('wizard-content').innerHTML = html;
+
+  const isResult = step.id === 'result';
+  document.getElementById('btn-prev').textContent = wizardStep === 0 ? '✕ Cancel' : '← Previous';
+  document.getElementById('btn-next').textContent = isResult ? '✅ Save & Finish' : 'Continue →';
+  if (isResult) {
+    document.getElementById('btn-next').className = 'btn btn-primary';
+    document.getElementById('btn-next').style.background = 'var(--green)';
+  }
+
+  attachStepListeners(step.id);
+}
+
+function renderPatientStep() {
+  const isNeo = wizardType === 'neonatal';
+  return `
+    <div class="form-card">
+      <div class="form-card-title"><span class="fct-icon">👤</span> ${isNeo ? 'Baby' : 'Patient'} Information</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">${isNeo ? 'Baby Name' : 'Patient Name'} <span class="required">*</span></label>
+          <input type="text" id="f-name" class="form-input" placeholder="Enter name">
+          <div class="form-error" id="err-name"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">${isNeo ? 'Mother Age' : 'Age'} <span class="required">*</span></label>
+          <input type="number" id="f-age" class="form-input" placeholder="Years" min="0" max="120">
+          <div class="form-error" id="err-age"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sub-center <span class="required">*</span></label>
+          <input type="text" id="f-sub" class="form-input" placeholder="Sub-center name">
+          <div class="form-error" id="err-sub"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact <span class="required">*</span></label>
+          <input type="tel" id="f-contact" class="form-input" maxlength="10" placeholder="10-digit phone">
+          <div class="form-error" id="err-contact"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderVitalsStep() {
+  return `
+    <div class="form-card">
+      <div class="form-card-title"><span class="fct-icon">📊</span> Vital Signs</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Systolic BP (mmHg) <span class="required">*</span></label>
+          <input type="number" id="f-sbp" class="form-input" placeholder="e.g., 120" min="40" max="300">
+          <div class="form-error" id="err-sbp"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Diastolic BP (mmHg) <span class="required">*</span></label>
+          <input type="number" id="f-dbp" class="form-input" placeholder="e.g., 80" min="20" max="200">
+          <div class="form-error" id="err-dbp"></div>
+        </div>
+        ${wizardType === 'antenatal' ? `
+        <div class="form-group">
+          <label class="form-label">Hemoglobin (g/dL)</label>
+          <input type="number" id="f-hb" class="form-input" placeholder="e.g., 10.5" step="0.1">
+        </div>
+        ` : `
+        <div class="form-group">
+          <label class="form-label">Heart Rate (bpm)</label>
+          <input type="number" id="f-hr" class="form-input" placeholder="e.g., 140" min="0" max="300">
+        </div>
+        `}
+        ${wizardType === 'antenatal' ? `
+        <div class="form-group">
+          <label class="form-label">Temperature (°C)</label>
+          <input type="number" id="f-temp" class="form-input" placeholder="e.g., 37.0" step="0.1" min="35" max="42">
+        </div>
+        ` : `
+        <div class="form-group">
+          <label class="form-label">Respiratory Rate</label>
+          <input type="number" id="f-rr" class="form-input" placeholder="e.g., 40" min="0" max="100">
+        </div>
+        `}
+        <div class="form-group">
+          <label class="form-label">MUAC (cm)</label>
+          <input type="number" id="f-muac" class="form-input" placeholder="e.g., 23.5" step="0.1" min="5" max="50">
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPregnancyStep() {
+  return `
+    <div class="form-card">
+      <div class="form-card-title"><span class="fct-icon">🤰</span> Pregnancy Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Weeks of Gestation <span class="required">*</span></label>
+          <input type="number" id="f-weeks" class="form-input" placeholder="e.g., 28" min="0" max="42">
+          <div class="form-error" id="err-weeks"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Menstrual Period</label>
+          <input type="date" id="f-lmp" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fetal Movement</label>
+          <select id="f-fm" class="form-select">
+            <option value="">Select...</option>
+            <option value="normal">Normal</option>
+            <option value="reduced">Reduced</option>
+            <option value="absent">Absent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Parity (Gravida/Para)</label>
+          <input type="text" id="f-parity" class="form-input" placeholder="e.g., G2P1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ABHA Number</label>
+          <input type="text" id="f-abha" class="form-input" maxlength="14" placeholder="14-digit ABHA number (optional)">
+          <div class="form-error" id="err-abha"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSymptomsStep() {
+  const symptoms = [
+    'Severe headache', 'Blurred vision', 'Epigastric pain', 'Vaginal bleeding',
+    'Swelling of face/hands', 'Convulsions', 'Chest pain', 'Fever',
+    'Cough', 'Diarrhea', 'Reduced fetal movements', 'Leakage of fluid'
+  ];
+  return `
+    <div class="form-card">
+      <div class="form-card-title"><span class="fct-icon">🩺</span> Symptoms & Findings</div>
+      <div class="symptoms-grid">
+        ${symptoms.map(s => `
+          <div class="symptom-item" onclick="toggleSymptom(this)">
+            <div class="sym-check">☑</div>
+            <div class="sym-label">${s}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderResultStep() {
+  const risk = wizardData.risk || { level: 'low', label: 'Low Risk', recommendations: ['Follow standard protocols'] };
+  const riskEmoji = { critical:'🔴', high:'🟠', moderate:'🟡', low:'🟢' }[risk.level] || '🟢';
+  
+  return `
+    <div class="result-panel ${risk.level}">
+      <div style="font-size:32px;margin-bottom:12px;">${riskEmoji}</div>
+      <div class="result-title">${risk.label}</div>
+      <div class="result-sub">${risk.summary || 'Assessment complete'}</div>
+      <div class="result-badge">${risk.recommendations ? risk.recommendations.length + ' recommendations' : '0 recommendations'}</div>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title">Recommendations</div>
+      <ul class="recommendations-list">
+        ${(risk.recommendations || []).map(r => `<li><span class="rec-dot"></span>${r}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function collectStepData() {
+  const v = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return '';
+    if (el.type === 'checkbox') return el.checked;
+    return el.value || '';
+  };
+  const steps = getSteps();
+  const step  = steps[wizardStep];
+
+  if (step.id === 'patient') {
+    wizardData.patientName = v('f-name');
+    wizardData.age         = v('f-age');
+    wizardData.subCenter   = v('f-sub');
+    wizardData.contact     = v('f-contact');
+  } else if (step.id === 'vitals') {
+    wizardData.systolicBP  = v('f-sbp');
+    wizardData.diastolicBP = v('f-dbp');
+    wizardData.muac        = v('f-muac');
+    if (wizardType === 'antenatal') {
+      wizardData.hemoglobin = v('f-hb');
+      wizardData.temp       = v('f-temp');
+    } else {
+      wizardData.heartRate  = v('f-hr');
+      wizardData.respRate   = v('f-rr');
+    }
+  } else if (step.id === 'pregnancy') {
+    wizardData.weeks       = v('f-weeks');
+    wizardData.lmp         = v('f-lmp');
+    wizardData.fetalMovement = v('f-fm');
+    wizardData.parity      = v('f-parity');
+    wizardData.abha        = v('f-abha');
+  } else if (step.id === 'symptoms') {
+    const checked = [];
+    document.querySelectorAll('.symptom-item.checked .sym-label').forEach(el => {
+      checked.push(el.textContent);
+    });
+    wizardData.symptoms = checked;
+  }
+}
+
+function validateCurrentStep() {
+  const steps = getSteps();
+  const step  = steps[wizardStep];
+  let valid = true;
+
+  if (step.id === 'patient') {
+    if (!v('f-name')) { showFieldError('err-name', 'Name required'); valid = false; }
+    if (!v('f-age')) { showFieldError('err-age', 'Age required'); valid = false; }
+    if (!v('f-sub')) { showFieldError('err-sub', 'Sub-center required'); valid = false; }
+    const contact = v('f-contact');
+    if (!contact) { showFieldError('err-contact', 'Contact required'); valid = false; }
+    else if (contact.length > 10) { showFieldError('err-contact', 'Contact max 10 digits'); valid = false; }
+  }
+  
+  if (step.id === 'pregnancy' && wizardType === 'antenatal') {
+    const abha = v('f-abha');
+    if (abha && abha.length !== 14) { showFieldError('err-abha', 'ABHA must be 14 digits'); valid = false; }
+  }
+
+  if (step.id === 'vitals') {
+    if (!v('f-sbp')) { showFieldError('err-sbp', 'Systolic BP required'); valid = false; }
+    if (!v('f-dbp')) { showFieldError('err-dbp', 'Diastolic BP required'); valid = false; }
+  }
+
+  if (step.id === 'pregnancy' && wizardType === 'antenatal') {
+    if (!v('f-weeks')) { showFieldError('err-weeks', 'Weeks required'); valid = false; }
+  }
+  
+  if (step.id === 'pregnancy' && wizardType === 'antenatal') {
+    const abha = v('f-abha');
+    if (abha && abha.length !== 14) { showFieldError('err-abha', 'ABHA must be exactly 14 digits'); valid = false; }
+    if (abha && !/^\d+$/.test(abha)) { showFieldError('err-abha', 'ABHA must contain only digits'); valid = false; }
+  }
+
+  return valid;
+
+  function v(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+  }
+}
+
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function attachStepListeners(stepId) {
+  if (stepId === 'symptoms') {
+    document.querySelectorAll('.symptom-item').forEach(item => {
+      item.addEventListener('click', function() {
+        this.classList.toggle('checked');
+      });
+    });
+  }
+}
+
+function toggleSymptom(el) {
+  el.classList.toggle('checked');
+}
+
+function wizardPrev() {
+  if (wizardStep === 0) {
+    // Show selector again
+    const selector = document.getElementById('assessment-type-selector');
+    const container = document.getElementById('wizard-container');
+    if (selector) selector.style.display = 'block';
+    if (container) container.style.display = 'none';
+    wizardType = null;
+    return;
+  }
+  collectStepData();
+  wizardStep--;
+  renderWizardStep();
+}
+
+async function wizardNext() {
+  const steps = getSteps();
+  if (!validateCurrentStep()) return;
+  collectStepData();
+
+  if (wizardStep === steps.length - 1) {
+    await finishAssessment();
+    return;
+  }
+
+  wizardStep++;
+  renderWizardStep();
+}
+
+/* ─── Finish Assessment & Call Backend ──────────────────────────── */
+async function finishAssessment() {
+  // Show loading
+  const btn = document.getElementById('btn-next');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Processing...';
+
+  try {
+    // Build payload for backend
+    const payload = {
+      blood_pressure: {
+        systolic: parseFloat(wizardData.systolicBP) || 0,
+        diastolic: parseFloat(wizardData.diastolicBP) || 0
+      },
+      symptom_history: buildSymptomHistory(),
+      muac: {
+        value: parseFloat(wizardData.muac) || 0
+      },
+      fhs: buildFHS()
+    };
+
+    console.log('Sending to backend:', payload);
+
+    // Call backend API
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail?.[0]?.msg || `Backend error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Backend response:', result);
+
+    // Store in local DB
+    const record = {
+      id: Date.now().toString(),
+      type: wizardType,
+      patientName: wizardData.patientName,
+      subCenter: wizardData.subCenter,
+      riskLevel: normalizeRiskLevel(result.overall_tier),
+      syncStatus: 'pending',
+      apiResult: result,
+      wizardData: wizardData,
+      createdAt: new Date().toISOString()
+    };
+
+    await saveRecord(record);
+    
+    wizardData.risk = {
+      level: normalizeRiskLevel(result.overall_tier),
+      label: result.alert_headline,
+      summary: result.summary_text,
+      recommendations: result.actions
+    };
+
+    renderWizardStep();
+    showToast('✅ Assessment completed!', 'success');
+    
+    // Re-enable button after 2 seconds for next action
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '🔄 New Assessment';
+      btn.style.background = 'var(--teal)';
+      btn.onclick = () => navigate('dashboard');
+    }, 2000);
+
+  } catch (err) {
+    console.error('Error:', err);
+    showToast(`Error: ${err.message}`, 'error');
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+function normalizeRiskLevel(tier) {
+  if (tier === 'REFERRAL') return 'critical';
+  if (tier === 'MONITOR') return 'moderate';
+  return 'low';
+}
+
+function buildSymptomHistory() {
+  const symptoms = wizardData.symptoms || [];
+  const lower = symptoms.map(s => s.toLowerCase());
+  
+  return {
+    mild_headache: lower.includes('mild headache') || lower.includes('headache'),
+    ankle_oedema: lower.includes('ankle oedema') || lower.includes('swelling'),
+    dysuria: false,
+    persistent_vomiting: false,
+    mild_fever: false,
+    severe_headache: lower.includes('severe headache'),
+    visual_changes: lower.includes('blurred vision'),
+    convulsions: lower.includes('convulsions') || lower.includes('seizures'),
+    vaginal_bleeding: lower.includes('vaginal bleeding'),
+    absent_reduced_fetal_movements: lower.includes('reduced fetal') || lower.includes('absent fetal'),
+    severe_abdominal_pain: lower.includes('epigastric pain') || lower.includes('severe abdominal'),
+    high_fever: lower.includes('fever'),
+    difficulty_breathing: lower.includes('chest pain')
+  };
+}
+
+function buildFHS() {
+  // For antenatal, provide a default normal FHS value
+  // Normal FHS is 120-160 bpm
+  return {
+    bpm: 140,  // Normal fetal heart rate
+    absent: false
+  };
+}
+
+/* ─── Patients ───────────────────────────────────────────────────── */
+async function renderPatientsTable() {
+  const records = await getAllRecords();
+  const container = document.getElementById('patients-container');
+
+  if (!records.length) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-500);">No patient records</div>';
+    return;
+  }
+
+  let html = `
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr style="border-bottom:2px solid var(--gray-200);">
+            <th style="text-align:left;padding:12px;font-weight:700;color:var(--gray-700);">Patient Name</th>
+            <th style="text-align:left;padding:12px;font-weight:700;color:var(--gray-700);">Type</th>
+            <th style="text-align:left;padding:12px;font-weight:700;color:var(--gray-700);">Risk Level</th>
+            <th style="text-align:left;padding:12px;font-weight:700;color:var(--gray-700);">Date</th>
+            <th style="text-align:left;padding:12px;font-weight:700;color:var(--gray-700);">Sync Status</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  records.forEach(r => {
+    const date = new Date(r.createdAt).toLocaleDateString();
+    const type = r.type === 'antenatal' ? '🤰 Antenatal' : '👶 Neonatal';
+    const riskClass = `risk-${r.riskLevel}`;
+    html += `
+      <tr style="border-bottom:1px solid var(--gray-100);">
+        <td style="padding:12px;">${r.patientName}</td>
+        <td style="padding:12px;">${type}</td>
+        <td style="padding:12px;"><span class="risk-badge ${riskClass}">${r.riskLevel.toUpperCase()}</span></td>
+        <td style="padding:12px;">${date}</td>
+        <td style="padding:12px;">
+          <span class="sync-tag" style="background:var(--green-lt);color:#15803d;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;">${r.syncStatus}</span>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+function clearData() {
+  if (confirm('Are you sure? This will delete all data.')) {
+    localStorage.removeItem(STORE_KEY);
+    showToast('All data cleared', 'success');
+    refreshStats();
+  }
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'en' ? 'hi' : 'en';
+  document.querySelector('.lang-btn').textContent = currentLang.toUpperCase();
+  updateUILanguage();
+  showToast(`Language: ${currentLang === 'en' ? 'English' : 'हिंदी'}`, 'info');
+}
+
+function updateUILanguage() {
+  // Update all elements with data-i18n attribute
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+
+  // Update placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+
+  // Update wizard title if on assessment page
+  if (currentPage === 'assessment' && wizardType) {
+    const titleKey = wizardType === 'antenatal' ? 'antenatalAssessment' : 'neonatalAssessment';
+    const titleEl = document.getElementById('wizard-type-title');
+    if (titleEl) titleEl.textContent = t(titleKey);
+    
+    // Update step counter
+    const steps = getSteps();
+    const stepLabel = document.querySelector('.step-counter');
+    if (stepLabel) {
+      stepLabel.innerHTML = `${t('step')} <span id="step-num">${wizardStep + 1}</span> ${t('of')} <span id="step-total">${steps.length}</span>`;
+    }
+  }
+
+  // Re-render current page
+  const pages = document.querySelectorAll('.page');
+  pages.forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${currentPage}`).classList.add('active');
+  
+  if (currentPage === 'dashboard') {
+    refreshStats();
+  } else if (currentPage === 'patients') {
+    renderPatientsTable();
+  }
+}
+
+/* ─── Boot ──────────────────────────────────────────────────────── */
+async function boot() {
+  updateNetworkUI(isOnline);
+  greet();
+  await refreshStats();
+  setInterval(greet, 60000);
+}
+
+boot();
+</script>
+</body>
+</html>

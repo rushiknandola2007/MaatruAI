@@ -1,0 +1,2944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>MatruAI | Maternal & Neonatal Clinical Decision Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ─── CSS Reset & Variables ─────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal:      #0a8f78;
+    --teal-lt:   #e0f5f1;
+    --teal-dk:   #066354;
+    --rose:      #e84f6b;
+    --rose-lt:   #fde8ed;
+    --amber:     #f59e0b;
+    --amber-lt:  #fef3c7;
+    --green:     #22c55e;
+    --green-lt:  #dcfce7;
+    --red:       #ef4444;
+    --red-lt:    #fee2e2;
+    --blue:      #3b82f6;
+    --blue-lt:   #dbeafe;
+    --gray-50:   #f8fafc;
+    --gray-100:  #f1f5f9;
+    --gray-200:  #e2e8f0;
+    --gray-300:  #cbd5e1;
+    --gray-400:  #94a3b8;
+    --sidebar-w-mobile: 0; /* Sidebar hidden on mobile */
+    --sidebar-w: 240px;
+    --gray-500:  #64748b;
+    --gray-600:  #475569;
+    --gray-700:  #334155;
+    --gray-800:  #1e293b;
+    --gray-900:  #0f172a;
+    --font-head: 'Sora', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+    --sidebar-w: 240px;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-body);
+    background: var(--gray-50);
+    color: var(--gray-800);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ─── Login Page ────────────────────────────────────────────────── */
+  .login-container {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dk) 100%);
+    padding: 20px;
+  }
+  .login-card {
+    background: #fff; border-radius: var(--radius-lg);
+    padding: 40px; width: 100%; max-width: 420px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.2);
+  }
+  .login-header {
+    text-align: center; margin-bottom: 32px;
+  }
+  .app-title {
+    font-family: var(--font-head); font-size: 32px; font-weight: 700;
+    color: var(--teal-dk); margin: 0 0 12px 0;
+  }
+  .app-subtitle {
+    font-size: 14px; color: var(--gray-600); margin: 0; line-height: 1.5;
+  }
+  @media (max-width: 768px) {
+    .login-container {
+      padding: 16px !important;
+    }
+    .login-card {
+      padding: 32px 24px; max-width: 100%; border-radius: var(--radius-md);
+    }
+    .app-title { font-size: 26px; }
+    .app-subtitle { font-size: 12px; }
+  }
+  @media (max-width: 480px) {
+    .login-card { 
+      padding: 24px 16px; margin: 16px;
+      border-radius: var(--radius-md);
+    }
+    .app-title { font-size: 24px; margin: 0 0 8px 0; }
+    .app-subtitle { font-size: 11px; }
+  }
+  .login-form {
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .login-form .form-group { margin: 0; }
+  .login-form label {
+    display: block; font-size: 13px; font-weight: 600;
+    color: var(--gray-700); margin-bottom: 8px;
+  }
+  .login-form input, .login-form select {
+    width: 100%; padding: 12px 14px;
+    border: 1px solid var(--gray-300); border-radius: var(--radius-sm);
+    font-family: var(--font-body); font-size: 14px;
+    transition: border-color .18s; min-height: 44px;
+  }
+  .login-form input:focus, .login-form select:focus {
+    outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(20,184,166,.1);
+  }
+  @media (max-width: 480px) {
+    .login-form input, .login-form select {
+      padding: 11px 12px; font-size: 16px;
+    }
+  }
+  .login-demo-hint {
+    background: var(--gray-50); padding: 12px; border-radius: var(--radius-sm);
+    border-left: 3px solid var(--teal); text-align: center;
+  }
+
+  /* ─── Toast / Snackbar ─────────────────────────────────────────── */
+  #toast-container {
+    position: fixed; bottom: 24px; right: 24px;
+    z-index: 9999; display: flex; flex-direction: column; gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--gray-900); color: #fff;
+    padding: 12px 18px; border-radius: var(--radius-md);
+    font-size: 14px; font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    pointer-events: auto;
+    animation: toast-in .35s cubic-bezier(.34,1.56,.64,1) forwards;
+    max-width: 320px;
+  }
+  .toast.success { background: var(--teal-dk); }
+  .toast.warning { background: #b45309; }
+  .toast.error   { background: #b91c1c; }
+  .toast.hiding  { animation: toast-out .3s ease forwards; }
+  .toast-icon { font-size: 16px; flex-shrink: 0; }
+  @keyframes toast-in  { from { opacity:0; transform:translateY(12px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes toast-out { to   { opacity:0; transform:translateY(8px) scale(.96); } }
+
+  /* ─── Layout ────────────────────────────────────────────────────── */
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* Header */
+  #header {
+    position: sticky; top: 0; z-index: 100;
+    background: #fff; border-bottom: 1px solid var(--gray-200);
+    padding: 0 20px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+  }
+  .header-brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo-mark {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dk) 100%);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden; flex-shrink: 0;
+  }
+  .logo-mark svg { width: 22px; height: 22px; }
+  .brand-text { line-height: 1.2; }
+  .brand-name {
+    font-family: var(--font-head);
+    font-size: 18px; font-weight: 700;
+    color: var(--gray-900); letter-spacing: -.4px;
+  }
+  .brand-tagline { font-size: 11px; color: var(--gray-500); font-weight: 500; letter-spacing: .3px; }
+  .header-controls { display: flex; align-items: center; gap: 8px; }
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 100px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .status-pill.online  { background: var(--green-lt); color: #15803d; border-color: #bbf7d0; }
+  .status-pill.offline { background: var(--amber-lt); color: #92400e; border-color: #fde68a; }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    animation: pulse-dot 2s ease infinite;
+  }
+  .status-pill.online  .status-dot { background: var(--green); }
+  .status-pill.offline .status-dot { background: var(--amber); animation: none; }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .6; transform: scale(.8); }
+  }
+  .sync-badge {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 100px;
+    font-size: 12px; font-weight: 600;
+    background: var(--blue-lt); color: #1d4ed8; border: 1px solid #bfdbfe;
+  }
+  .sync-badge svg { animation: spin 1.2s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .lang-btn, .menu-btn {
+    background: none; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm); padding: 6px 11px;
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    color: var(--gray-700); cursor: pointer;
+    transition: all .18s; display: flex; align-items: center; gap: 5px;
+  }
+  .lang-btn:hover, .menu-btn:hover { background: var(--gray-50); border-color: var(--gray-300); }
+  .menu-btn { padding: 7px 9px; display: none; }
+  @media (max-width: 768px) { .menu-btn { display: flex !important; } }
+  @media (max-width: 1024px) { :root { --sidebar-w: 220px; } }
+  @media (max-width: 768px) { :root { --sidebar-w: 240px; } }
+
+  /* Sidebar + Content */
+  #body-wrap { display: flex; flex: 1; min-height: calc(100vh - 64px); }
+  #sidebar {
+    width: var(--sidebar-w); flex-shrink: 0;
+    background: #fff; border-right: 1px solid var(--gray-200);
+    position: sticky; top: 64px;
+    height: calc(100vh - 64px); overflow-y: auto;
+    padding: 16px 12px;
+    display: flex; flex-direction: column;
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+  }
+  #sidebar.hidden { transform: translateX(-100%); position: fixed; z-index: 90; }
+  @media (max-width: 768px) {
+    #sidebar { 
+      position: fixed; top: 64px; left: 0; z-index: 90; transform: translateX(-100%); 
+      width: 280px; max-width: 80vw; height: calc(100vh - 64px); overflow-y: auto;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+    }
+    #sidebar.open { transform: translateX(0); }
+    #main-content { margin-left: 0 !important; width: 100%; }
+  }
+  @media (max-width: 480px) {
+    #sidebar { width: 100%; max-width: 100vw; }
+  }
+  .nav-section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    color: var(--gray-400); text-transform: uppercase;
+    padding: 14px 12px 6px;
+  }
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border-radius: var(--radius-md);
+    border: none; background: none; cursor: pointer;
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    color: var(--gray-600); transition: all .18s;
+    width: 100%; text-align: left; min-height: 44px;
+  }
+  @media (max-width: 480px) {
+    .nav-btn { padding: 11px 12px; font-size: 13px; }
+  }
+  .nav-btn:hover { background: var(--gray-50); color: var(--gray-900); }
+  .nav-btn.active { background: var(--teal-lt); color: var(--teal-dk); font-weight: 600; }
+  .nav-btn .nav-icon {
+    width: 32px; height: 32px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 15px;
+    background: var(--gray-100); color: var(--gray-600);
+    transition: all .18s;
+  }
+  .nav-btn.active .nav-icon { background: var(--teal); color: #fff; }
+  .nav-btn .nav-label { flex: 1; }
+  .sidebar-footer {
+    margin-top: auto; padding-top: 16px;
+    border-top: 1px solid var(--gray-100);
+  }
+  .sidebar-sync-card {
+    border-radius: var(--radius-md); padding: 12px;
+    font-size: 12px; line-height: 1.5;
+  }
+  .sidebar-sync-card.online-card  { background: var(--green-lt); color: #15803d; }
+  .sidebar-sync-card.offline-card { background: var(--amber-lt); color: #92400e; }
+  .sidebar-sync-card strong { font-weight: 700; display: block; margin-bottom: 2px; }
+
+  /* Main Content */
+  #main-content {
+    flex: 1; min-width: 0;
+    margin-left: var(--sidebar-w);
+    padding: 28px 28px 80px;
+    background: var(--gray-50);
+  }
+  @media (max-width: 1024px) { #main-content { padding: 24px 24px 80px; } }
+  @media (max-width: 768px) { #main-content { padding: 16px 16px 80px; margin-left: 0; } }
+  @media (max-width: 480px) { #main-content { padding: 12px 12px 80px; } }
+
+  /* Bottom Nav (mobile) */
+  #bottom-nav {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff; border-top: 1px solid var(--gray-200);
+    padding: 6px 0 env(safe-area-inset-bottom, 0);
+    z-index: 95; grid-template-columns: repeat(5, 1fr);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+  }
+  @media (max-width: 768px) { #bottom-nav { display: grid; } }
+  .bottom-nav-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 8px 4px; cursor: pointer; background: none; border: none;
+    font-size: 11px; font-weight: 600; color: var(--gray-600);
+    min-height: 56px; transition: all .2s;
+  }
+  .bottom-nav-btn:active { background: var(--gray-50); }
+  .bottom-nav-btn.active { color: var(--teal-dk); }
+  @media (max-width: 480px) {
+    .bottom-nav-btn { font-size: 10px; padding: 6px 2px; }
+  }
+  /* Override for previous section */
+  .bottom-nav-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 4px; border: none; background: none; cursor: pointer;
+    font-family: var(--font-body); font-size: 9px; font-weight: 600;
+    color: var(--gray-400); transition: color .18s; letter-spacing: .2px;
+  }
+  .bottom-nav-btn .bnb-icon { font-size: 20px; line-height: 1; }
+  .bottom-nav-btn.active { color: var(--teal); }
+
+  /* Page overlay for mobile sidebar */
+  #overlay {
+    display: none; position: fixed; inset: 0; z-index: 89;
+    background: rgba(0,0,0,.3); backdrop-filter: blur(2px);
+  }
+  #overlay.show { display: block; }
+
+  /* ─── Page Sections ──────────────────────────────────────────────── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ─── Dashboard ─────────────────────────────────────────────────── */
+  .page-header { margin-bottom: 24px; }
+  .page-title {
+    font-family: var(--font-head); font-size: 26px; font-weight: 700;
+    color: var(--gray-900); letter-spacing: -.5px;
+  }
+  .page-subtitle { font-size: 14px; color: var(--gray-500); margin-top: 4px; }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px; margin-bottom: 28px;
+  }
+  .stat-card {
+    background: #fff; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg); padding: 20px;
+    box-shadow: var(--shadow-sm); transition: box-shadow .2s;
+  }
+  .stat-card:hover { box-shadow: var(--shadow-md); }
+  .stat-label { font-size: 12px; font-weight: 600; color: var(--gray-500); letter-spacing: .3px; text-transform: uppercase; }
+  .stat-value { font-family: var(--font-head); font-size: 32px; font-weight: 700; color: var(--gray-900); margin: 6px 0 2px; }
+  .stat-sub { font-size: 12px; color: var(--gray-400); }
+  .stat-card.teal .stat-value { color: var(--teal); }
+  .stat-card.rose .stat-value { color: var(--rose); }
+  .stat-card.amber .stat-value { color: #d97706; }
+  .stat-card.green .stat-value { color: #16a34a; }
+
+  .action-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px; margin-bottom: 28px;
+  }
+  .action-card {
+    border-radius: var(--radius-xl); padding: 24px;
+    cursor: pointer; border: none; text-align: left;
+    transition: all .2s; position: relative; overflow: hidden;
+    font-family: var(--font-body);
+  }
+  .action-card::before {
+    content: ''; position: absolute; right: -20px; top: -20px;
+    width: 100px; height: 100px; border-radius: 50%;
+    background: rgba(255,255,255,.15);
+  }
+  .action-card.antenatal { background: linear-gradient(135deg, var(--teal) 0%, #0a6e5e 100%); color: #fff; }
+  .action-card.neonatal  { background: linear-gradient(135deg, var(--rose) 0%, #c23160 100%); color: #fff; }
+  .action-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .action-card:active { transform: translateY(0); }
+  .ac-icon { font-size: 32px; margin-bottom: 12px; display: block; }
+  .ac-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .ac-desc { font-size: 13px; opacity: .85; }
+  .ac-arrow { position: absolute; right: 20px; bottom: 20px; font-size: 20px; opacity: .7; }
+
+  .section-title {
+    font-family: var(--font-head); font-size: 16px; font-weight: 700;
+    color: var(--gray-900); margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .section-title a { font-size: 13px; font-weight: 600; color: var(--teal); text-decoration: none; cursor: pointer; }
+  .section-title a:hover { text-decoration: underline; }
+
+  /* Recent patients list */
+  .patient-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; background: #fff;
+    border: 1px solid var(--gray-200); border-radius: var(--radius-md);
+    margin-bottom: 8px; transition: box-shadow .18s;
+  }
+  .patient-row:hover { box-shadow: var(--shadow-sm); }
+  .patient-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .patient-avatar.antenatal { background: var(--teal-lt); color: var(--teal-dk); }
+  .patient-avatar.neonatal  { background: var(--rose-lt);  color: var(--rose); }
+  .patient-info { flex: 1; min-width: 0; }
+  .patient-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+  .patient-meta { font-size: 12px; color: var(--gray-500); }
+  .risk-badge {
+    padding: 3px 10px; border-radius: 100px;
+    font-size: 11px; font-weight: 700; letter-spacing: .3px; flex-shrink: 0;
+  }
+  .risk-critical { background: var(--red-lt); color: #b91c1c; }
+  .risk-high     { background: #fee2e2; color: #b91c1c; }
+  .risk-moderate { background: var(--amber-lt); color: #92400e; }
+  .risk-low      { background: var(--green-lt); color: #15803d; }
+
+  /* ─── Assessment Wizard ─────────────────────────────────────────── */
+  .wizard-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+  }
+  .back-btn {
+    width: 38px; height: 38px; border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200); background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 18px; color: var(--gray-600);
+    transition: all .18s; flex-shrink: 0;
+  }
+  .back-btn:hover { background: var(--gray-50); border-color: var(--gray-300); color: var(--gray-900); }
+  .wizard-title { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--gray-900); }
+  .wizard-subtitle { font-size: 13px; color: var(--gray-500); }
+
+  /* Step progress */
+  .step-progress {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 28px; overflow-x: auto; padding-bottom: 4px;
+  }
+  .step-item {
+    display: flex; align-items: center; flex-shrink: 0;
+  }
+  .step-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    border: 2px solid var(--gray-200); background: #fff; color: var(--gray-400);
+    transition: all .3s;
+  }
+  .step-circle.done    { background: var(--teal);     border-color: var(--teal);     color: #fff; }
+  .step-circle.active  { background: var(--gray-900); border-color: var(--gray-900); color: #fff; }
+  .step-label {
+    font-size: 11px; font-weight: 600; color: var(--gray-400);
+    margin: 0 8px; white-space: nowrap;
+  }
+  .step-label.active  { color: var(--gray-900); }
+  .step-label.done    { color: var(--teal); }
+  .step-connector {
+    width: 20px; height: 2px;
+    background: var(--gray-200); flex-shrink: 0; transition: background .3s;
+  }
+  .step-connector.done { background: var(--teal); }
+
+  /* Form Cards */
+  .form-card {
+    background: #fff; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl); padding: 24px;
+    box-shadow: var(--shadow-sm); margin-bottom: 16px;
+  }
+  .form-card-title {
+    font-family: var(--font-head); font-size: 15px; font-weight: 700;
+    color: var(--gray-900); margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .form-card-title .fct-icon {
+    width: 28px; height: 28px; border-radius: var(--radius-sm);
+    background: var(--teal-lt); color: var(--teal);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .form-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label {
+    font-size: 13px; font-weight: 600; color: var(--gray-700);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .form-label .required { color: var(--rose); }
+  .form-input, .form-select {
+    height: 42px; padding: 0 13px;
+    border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+    font-family: var(--font-body); font-size: 14px; color: var(--gray-900);
+    background: #fff; transition: all .18s; width: 100%;
+    outline: none;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--teal); box-shadow: 0 0 0 3px rgba(10,143,120,.12);
+  }
+  .form-input.error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
+  .form-error { font-size: 12px; color: var(--red); font-weight: 500; }
+  .form-hint  { font-size: 12px; color: var(--gray-400); }
+
+  /* Symptom checklist */
+  .symptoms-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+  }
+  .symptom-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border-radius: var(--radius-md);
+    border: 1.5px solid var(--gray-200); background: #fff;
+    cursor: pointer; transition: all .18s;
+  }
+  .symptom-item:hover { border-color: var(--teal-lt); background: var(--teal-lt); }
+  .symptom-item.checked {
+    border-color: var(--rose); background: var(--rose-lt);
+  }
+  .symptom-item .sym-check {
+    width: 18px; height: 18px; border-radius: 4px;
+    border: 2px solid var(--gray-300); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; transition: all .18s;
+  }
+  .symptom-item.checked .sym-check { background: var(--rose); border-color: var(--rose); color: #fff; }
+  .symptom-item .sym-label { font-size: 13px; font-weight: 500; color: var(--gray-700); }
+  .symptom-item.checked .sym-label { color: #b91c1c; font-weight: 600; }
+
+  /* Wizard footer */
+  .wizard-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 24px; padding-top: 20px;
+    border-top: 1px solid var(--gray-100);
+  }
+  .btn {
+    padding: 11px 22px; border-radius: var(--radius-md);
+    font-family: var(--font-body); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .18s; border: none;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: var(--teal-dk); }
+  .btn-secondary { background: var(--gray-100); color: var(--gray-700); }
+  .btn-secondary:hover { background: var(--gray-200); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Risk Result Panel */
+  .result-panel {
+    border-radius: var(--radius-xl); padding: 28px;
+    margin-bottom: 20px; position: relative; overflow: hidden;
+  }
+  .result-panel.critical { background: linear-gradient(135deg, #7f1d1d, #b91c1c); color: #fff; }
+  .result-panel.high     { background: linear-gradient(135deg, #991b1b, #dc2626); color: #fff; }
+  .result-panel.moderate { background: linear-gradient(135deg, #78350f, #d97706); color: #fff; }
+  .result-panel.low      { background: linear-gradient(135deg, #14532d, #16a34a); color: #fff; }
+  .result-title { font-family: var(--font-head); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .result-sub   { font-size: 14px; opacity: .85; }
+  .result-badge {
+    position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+    font-size: 56px; opacity: .2;
+  }
+  .recommendations-list {
+    list-style: none; padding: 0;
+  }
+  .recommendations-list li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 0; border-bottom: 1px solid var(--gray-100);
+    font-size: 14px; color: var(--gray-700);
+  }
+  .recommendations-list li:last-child { border-bottom: none; }
+  .rec-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .rec-dot.red    { background: var(--red); }
+  .rec-dot.amber  { background: var(--amber); }
+  .rec-dot.green  { background: var(--green); }
+  .rec-dot.teal   { background: var(--teal); }
+
+  /* ─── Patients List / Data Sheet ───────────────────────────────── */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .search-box {
+    position: relative; flex: 1; min-width: 180px;
+  }
+  .search-box input {
+    width: 100%; height: 40px; padding: 0 12px 0 36px;
+    border: 1.5px solid var(--gray-200); border-radius: var(--radius-md);
+    font-family: var(--font-body); font-size: 14px; color: var(--gray-800);
+    background: #fff; outline: none; transition: all .18s;
+  }
+  .search-box input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(10,143,120,.1); }
+  .search-box .search-icon {
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    font-size: 16px; color: var(--gray-400); pointer-events: none;
+  }
+  .filter-btn {
+    height: 40px; padding: 0 14px;
+    border: 1.5px solid var(--gray-200); border-radius: var(--radius-md);
+    background: #fff; font-family: var(--font-body); font-size: 13px;
+    font-weight: 600; color: var(--gray-600); cursor: pointer; transition: all .18s;
+  }
+  .filter-btn:hover   { border-color: var(--gray-300); background: var(--gray-50); }
+  .filter-btn.active  { border-color: var(--teal); background: var(--teal-lt); color: var(--teal-dk); }
+  .export-btn {
+    height: 40px; padding: 0 16px;
+    background: var(--teal); color: #fff; border: none;
+    border-radius: var(--radius-md); font-family: var(--font-body);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; transition: all .18s;
+  }
+  .export-btn:hover { background: var(--teal-dk); }
+
+  /* Data Table */
+  .table-wrap {
+    background: #fff; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg); overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table thead th {
+    padding: 12px 16px; text-align: left;
+    background: var(--gray-50); color: var(--gray-600);
+    font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .data-table tbody td {
+    padding: 13px 16px; color: var(--gray-800);
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover { background: var(--gray-50); }
+  .sync-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 100px;
+    font-size: 10px; font-weight: 700;
+  }
+  .sync-tag.synced  { background: var(--green-lt); color: #15803d; }
+  .sync-tag.pending { background: var(--amber-lt); color: #92400e; }
+  .sync-tag.failed  { background: var(--red-lt);   color: #b91c1c; }
+  .empty-state {
+    text-align: center; padding: 60px 24px;
+    color: var(--gray-400);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+  .empty-state small { font-size: 13px; }
+
+  /* ─── ABDM Page ─────────────────────────────────────────────────── */
+  .abdm-hero {
+    background: linear-gradient(135deg, #0f2744, #183d72);
+    border-radius: var(--radius-xl); padding: 32px;
+    color: #fff; margin-bottom: 24px; position: relative; overflow: hidden;
+  }
+  .abdm-hero::before {
+    content: ''; position: absolute; right: -60px; bottom: -60px;
+    width: 240px; height: 240px; border-radius: 50%;
+    background: rgba(59,130,246,.15);
+  }
+  .abdm-hero-title { font-family: var(--font-head); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .abdm-hero-sub { font-size: 14px; opacity: .8; max-width: 480px; }
+  .abdm-logo-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.12); border-radius: var(--radius-md);
+    padding: 8px 14px; margin-top: 16px;
+    font-size: 13px; font-weight: 600; border: 1px solid rgba(255,255,255,.2);
+  }
+
+  .abdm-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .abdm-step {
+    background: #fff; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg); padding: 20px; text-align: center;
+  }
+  .abdm-step-num {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--blue-lt); color: #1d4ed8;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; margin: 0 auto 12px;
+  }
+  .abdm-step h4 { font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+  .abdm-step p  { font-size: 12px; color: var(--gray-500); }
+
+  .abdm-form-card {
+    background: #fff; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl); padding: 28px;
+    box-shadow: var(--shadow-sm);
+  }
+  .abdm-form-title {
+    font-family: var(--font-head); font-size: 16px; font-weight: 700;
+    color: var(--gray-900); margin-bottom: 20px;
+  }
+  .abdm-tabs {
+    display: flex; gap: 4px; margin-bottom: 24px;
+    background: var(--gray-100); border-radius: var(--radius-md); padding: 4px;
+  }
+  .abdm-tab {
+    flex: 1; padding: 9px 14px; border-radius: var(--radius-sm);
+    border: none; background: none; cursor: pointer;
+    font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    color: var(--gray-500); transition: all .2s;
+  }
+  .abdm-tab.active { background: #fff; color: var(--gray-900); box-shadow: var(--shadow-sm); }
+  .abdm-tab-panel { display: none; }
+  .abdm-tab-panel.active { display: block; }
+  .otp-grid {
+    display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin: 16px 0;
+  }
+  .otp-input {
+    height: 52px; border: 2px solid var(--gray-200); border-radius: var(--radius-md);
+    text-align: center; font-family: var(--font-head); font-size: 22px; font-weight: 700;
+    color: var(--gray-900); background: #fff; outline: none; transition: all .18s; width: 100%;
+  }
+  .otp-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(10,143,120,.12); }
+  .otp-input.filled { border-color: var(--teal); background: var(--teal-lt); }
+  .abdm-info-box {
+    background: var(--blue-lt); border: 1px solid #bfdbfe;
+    border-radius: var(--radius-md); padding: 14px 16px;
+    font-size: 13px; color: #1e40af; margin-bottom: 18px;
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .abdm-info-box .info-icon { flex-shrink: 0; margin-top: 1px; font-size: 15px; }
+
+  /* ─── Settings ──────────────────────────────────────────────────── */
+  .settings-section { margin-bottom: 28px; }
+  .settings-section-title {
+    font-family: var(--font-head); font-size: 14px; font-weight: 700;
+    color: var(--gray-500); letter-spacing: .5px; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .settings-card {
+    background: #fff; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg); overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .settings-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px; border-bottom: 1px solid var(--gray-100);
+    transition: background .15s;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row:hover { background: var(--gray-50); }
+  .settings-row-icon {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    background: var(--gray-100); display: flex; align-items: center;
+    justify-content: center; font-size: 16px; flex-shrink: 0;
+  }
+  .settings-row-info { flex: 1; }
+  .settings-row-label { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+  .settings-row-desc  { font-size: 12px; color: var(--gray-500); margin-top: 1px; }
+  .toggle {
+    width: 44px; height: 24px; border-radius: 100px;
+    background: var(--gray-200); position: relative;
+    cursor: pointer; transition: background .2s; flex-shrink: 0; border: none;
+  }
+  .toggle::after {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    border-radius: 50%; background: #fff; top: 3px; left: 3px;
+    transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .toggle.on { background: var(--teal); }
+  .toggle.on::after { transform: translateX(20px); }
+
+  /* Profile card */
+  .profile-card {
+    background: #fff; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl); padding: 24px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: var(--shadow-sm); margin-bottom: 24px;
+  }
+  .profile-avatar {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dk));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700; color: #fff; flex-shrink: 0;
+    font-family: var(--font-head);
+  }
+  .profile-info h3 { font-family: var(--font-head); font-size: 17px; font-weight: 700; color: var(--gray-900); }
+  .profile-info p  { font-size: 13px; color: var(--gray-500); margin-top: 3px; }
+  .profile-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--teal-lt); color: var(--teal-dk);
+    padding: 3px 10px; border-radius: 100px;
+    font-size: 11px; font-weight: 700; margin-top: 6px;
+  }
+
+  /* ─── Comprehensive Mobile Responsiveness ─────────────────────────────────────── */
+  
+  /* Tablet (768px - 1024px) */
+  @media (max-width: 1024px) {
+    #header { padding: 0 16px; }
+    #main-content { padding: 20px 20px 80px; }
+    .brand-tagline { display: none; }
+    .action-cards { grid-template-columns: 1fr 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+  }
+  
+  /* Mobile (max 768px) */
+  @media (max-width: 768px) {
+    /* Header adjustments */
+    #header { 
+      padding: 0 12px; height: 60px;
+      gap: 8px;
+    }
+    .logo-mark { width: 36px; height: 36px; }
+    .logo-mark svg { width: 20px; height: 20px; }
+    .brand-name { font-size: 16px; }
+    .status-pill { padding: 4px 10px; font-size: 11px; }
+    .header-controls { gap: 6px; }
+    
+    /* Main content */
+    #main-content { 
+      margin-left: 0; width: 100%;
+      padding: 14px 12px 80px; min-height: calc(100vh - 60px);
+    }
+    
+    /* Grids */
+    .action-cards { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-grid { grid-template-columns: 1fr; gap: 12px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    
+    /* Cards */
+    .stat-card {
+      padding: 16px 12px;
+      border-radius: var(--radius-md);
+    }
+    .stat-card .stat-value { font-size: 20px; }
+    .stat-card .stat-label { font-size: 12px; }
+    
+    /* Sidebar */
+    #sidebar { 
+      width: 280px; max-width: 80vw;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Typography */
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 16px; }
+    
+    /* Buttons */
+    .btn { width: 100%; }
+    .btn-group { display: flex; flex-direction: column; gap: 8px; }
+    
+    /* Forms */
+    .form-group { margin-bottom: 14px; }
+    input, select, textarea { font-size: 16px; }
+    
+    /* Bottom nav */
+    #bottom-nav { 
+      height: 64px; 
+      padding: 4px 0 env(safe-area-inset-bottom, 4px);
+    }
+  }
+  
+  /* Small Mobile (max 480px) */
+  @media (max-width: 480px) {
+    /* Header */
+    #header { 
+      padding: 0 10px; height: 56px;
+      gap: 4px;
+    }
+    .logo-mark { width: 32px; height: 32px; }
+    .logo-mark svg { width: 18px; height: 18px; }
+    .brand-name { font-size: 14px; }
+    .brand-text { display: none; }
+    
+    #user-info { display: none !important; }
+    .lang-btn { padding: 6px 8px; font-size: 10px; }
+    
+    /* Main content */
+    #main-content { 
+      padding: 10px 10px 72px;
+      min-height: calc(100vh - 56px);
+    }
+    
+    /* Sidebar on mobile */
+    #sidebar {
+      width: 100%; max-width: 100vw;
+    }
+    
+    /* Grids - full stack on small mobile */
+    .action-cards { grid-template-columns: 1fr; gap: 10px; }
+    .form-grid { grid-template-columns: 1fr; gap: 10px; }
+    .stats-grid { grid-template-columns: 1fr; gap: 10px; }
+    
+    /* Cards */
+    .stat-card { padding: 12px 10px; }
+    .stat-card .stat-value { font-size: 18px; }
+    .stat-card .stat-label { font-size: 11px; }
+    
+    /* Typography */
+    h1 { font-size: 20px; }
+    h2 { font-size: 18px; }
+    h3 { font-size: 14px; }
+    p { font-size: 13px; }
+    
+    /* Buttons */
+    .btn { 
+      width: 100%; padding: 10px 14px;
+      font-size: 12px; min-height: 40px;
+    }
+    
+    /* Forms */
+    .form-group { margin-bottom: 12px; }
+    input, select, textarea { 
+      padding: 10px 12px; font-size: 16px;
+      border-radius: var(--radius-sm);
+    }
+    
+    /* Bottom nav */
+    #bottom-nav { 
+      height: 60px; 
+      padding: 2px 0 env(safe-area-inset-bottom, 2px);
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .bottom-nav-btn { 
+      font-size: 9px; padding: 4px 2px; min-height: 50px;
+    }
+    
+    /* Tables */
+    .data-table { font-size: 12px; }
+    
+    /* Spacers */
+    .spacer-lg { margin: 12px 0; }
+    .spacer-md { margin: 8px 0; }
+    .spacer-sm { margin: 4px 0; }
+    
+    /* Hidden on small mobile */
+    .hide-mobile { display: none !important; }
+  }
+  
+  /* Extra small (max 360px) */
+  @media (max-width: 360px) {
+    #header { padding: 0 8px; height: 54px; }
+    #main-content { padding: 8px 8px 68px; }
+    .btn { font-size: 11px; padding: 9px 12px; }
+    h1 { font-size: 18px; }
+    h2 { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── Toast Container ─────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ─── Overlay (mobile sidebar) ───────────────────────────────── -->
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<div id="app">
+
+  <!-- ─── Header ──────────────────────────────────────────────────── -->
+  <header id="header">
+    <div class="header-brand">
+      <button class="menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <!-- MatruAI Logo Placeholder -->
+      <div class="logo-mark" title="MatruAI Logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Heart with cross — maternal health symbolism -->
+          <path d="M12 21C12 21 4 15.5 4 9.5C4 7.01 5.79 5 8 5C9.5 5 10.8 5.8 12 7C13.2 5.8 14.5 5 16 5C18.21 5 20 7.01 20 9.5C20 15.5 12 21 12 21Z" fill="rgba(255,255,255,0.9)"/>
+          <path d="M12 10V14M10 12H14" stroke="rgba(10,143,120,0.9)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">MatruAI</div>
+        <div class="brand-tagline">Maternal &amp; Neonatal Health</div>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div id="status-pill" class="status-pill online">
+        <div class="status-dot"></div>
+        <span id="status-text">Online</span>
+      </div>
+      <div id="sync-badge" class="sync-badge" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span id="sync-count">0 pending</span>
+      </div>
+      <div id="user-info" style="display:none; font-size:12px; color: var(--gray-600);">
+        <span id="user-name"></span>
+        <span style="color:var(--teal); font-weight:600;" id="user-role"></span>
+      </div>
+      <button class="lang-btn" onclick="toggleLang()" id="lang-btn">
+        <span>हिं</span>
+      </button>
+      <button class="lang-btn" onclick="logout()" id="logout-btn" style="display:none; color: #b91c1c; border-color: #fecaca;">
+        🚪 Logout
+      </button>
+    </div>
+  </header>
+
+  <div id="body-wrap">
+
+    <!-- ─── Sidebar ──────────────────────────────────────────────── -->
+    <aside id="sidebar">
+      <div class="nav-section-label">Main Menu</div>
+      <nav>
+        <button class="nav-btn active" data-page="dashboard" onclick="navigate('dashboard', this)">
+          <div class="nav-icon">🏠</div>
+          <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-page="assessment" onclick="navigate('assessment', this)">
+          <div class="nav-icon">📋</div>
+          <span class="nav-label">New Assessment</span>
+        </button>
+        <button class="nav-btn" data-page="patients" onclick="navigate('patients', this)">
+          <div class="nav-icon">👥</div>
+          <span class="nav-label">Patients &amp; Data</span>
+        </button>
+        <button class="nav-btn" data-page="abdm" onclick="navigate('abdm', this)">
+          <div class="nav-icon">🏛️</div>
+          <span class="nav-label">ABDM / ABHA</span>
+        </button>
+        <button class="nav-btn" data-page="settings" onclick="navigate('settings', this)">
+          <div class="nav-icon">⚙️</div>
+          <span class="nav-label">Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div id="sidebar-sync-status" class="sidebar-sync-card online-card">
+          <strong>✅ Connected</strong>
+          All data synced to cloud
+        </div>
+      </div>
+    </aside>
+
+    <!-- ─── Main Content ─────────────────────────────────────────── -->
+    <main id="main-content">
+
+      <!-- ════ DASHBOARD PAGE ════ -->
+      <section id="page-dashboard" class="page active">
+        <div class="page-header">
+          <div class="page-title" id="dash-greeting">Good morning 👋</div>
+          <div class="page-subtitle">Start an assessment or review recent patients</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card teal">
+            <div class="stat-label">Total Assessments</div>
+            <div class="stat-value" id="stat-total">—</div>
+            <div class="stat-sub">All time</div>
+          </div>
+          <div class="stat-card rose">
+            <div class="stat-label">High Risk</div>
+            <div class="stat-value" id="stat-highrisk">—</div>
+            <div class="stat-sub">Needs attention</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">Pending Sync</div>
+            <div class="stat-value" id="stat-pending">—</div>
+            <div class="stat-sub">In local storage</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Synced</div>
+            <div class="stat-value" id="stat-synced">—</div>
+            <div class="stat-sub">In cloud</div>
+          </div>
+        </div>
+
+        <!-- Quick Action Cards -->
+        <div class="section-title">Quick Actions</div>
+        <div class="action-cards">
+          <button class="action-card antenatal" onclick="startAssessment('antenatal')">
+            <span class="ac-icon">🤱</span>
+            <div class="ac-title">Antenatal Assessment</div>
+            <div class="ac-desc">Maternal risk screening for pregnant women</div>
+            <div class="ac-arrow">→</div>
+          </button>
+          <button class="action-card neonatal" onclick="startAssessment('neonatal')">
+            <span class="ac-icon">👶</span>
+            <div class="ac-title">Neonatal Assessment</div>
+            <div class="ac-desc">Newborn health evaluation and risk scoring</div>
+            <div class="ac-arrow">→</div>
+          </button>
+        </div>
+
+        <!-- Recent Patients -->
+        <div class="section-title">
+          Recent Patients
+          <a onclick="navigate('patients', document.querySelector('[data-page=patients]'))">View all →</a>
+        </div>
+        <div id="recent-patients-list">
+          <div class="empty-state">
+            <div class="empty-icon">📂</div>
+            <p>No assessments yet</p>
+            <small>Complete an assessment to see patients here</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ ASSESSMENT WIZARD PAGE ════ -->
+      <section id="page-assessment" class="page">
+        <div class="wizard-header">
+          <button class="back-btn" onclick="navigate('dashboard', document.querySelector('[data-page=dashboard]'))">←</button>
+          <div>
+            <div class="wizard-title" id="wizard-type-title">Antenatal Assessment</div>
+            <div class="wizard-subtitle">Step <span id="step-num">1</span> of <span id="step-total">5</span></div>
+          </div>
+        </div>
+
+        <!-- Step Progress -->
+        <div class="step-progress" id="step-progress"></div>
+
+        <!-- Step Content Area -->
+        <div id="wizard-content"></div>
+
+        <!-- Wizard Footer -->
+        <div class="wizard-footer">
+          <button class="btn btn-secondary" id="btn-prev" onclick="wizardPrev()">← Previous</button>
+          <button class="btn btn-primary"   id="btn-next" onclick="wizardNext()">Continue →</button>
+        </div>
+      </section>
+
+      <!-- ════ PATIENTS / DATA SHEET PAGE ════ -->
+      <section id="page-patients" class="page">
+        <div class="page-header">
+          <div class="page-title">Patients &amp; Data Sheet</div>
+          <div class="page-subtitle">All recorded assessments with offline/online sync status</div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="Search patients by name…" oninput="filterPatients()" />
+          </div>
+          <button class="filter-btn active" data-filter="all"      onclick="setFilter('all',this)">All</button>
+          <button class="filter-btn"        data-filter="antenatal" onclick="setFilter('antenatal',this)">Antenatal</button>
+          <button class="filter-btn"        data-filter="neonatal"  onclick="setFilter('neonatal',this)">Neonatal</button>
+          <button class="filter-btn"        data-filter="high-risk" onclick="setFilter('high-risk',this)">High Risk</button>
+          <button class="export-btn" onclick="exportCSV()">
+            <span>⬇</span> Export CSV
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Patient Name</th>
+                <th>DOB</th>
+                <th>ABHA ID</th>
+                <th>Type</th>
+                <th>Risk Level</th>
+                <th>Date</th>
+                <th>Sync</th>
+              </tr>
+            </thead>
+            <tbody id="patients-tbody">
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <div class="empty-icon">🗂️</div>
+                    <p>No records yet</p>
+                    <small>Completed assessments will appear here</small>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Mobile card list -->
+        <div id="patient-cards-mobile" style="display:none"></div>
+      </section>
+
+      <!-- ════ ABDM / ABHA PAGE ════ -->
+      <section id="page-abdm" class="page">
+        <div class="page-header">
+          <div class="page-title">ABDM Integration</div>
+          <div class="page-subtitle">Ayushman Bharat Digital Mission — ABHA Login &amp; Authentication</div>
+        </div>
+
+        <div class="abdm-hero">
+          <div class="abdm-hero-title">🏛️ Ayushman Bharat Digital Mission</div>
+          <div class="abdm-hero-sub">Connect with India's national digital health ecosystem. Verify patient identity using their 14-digit ABHA Health ID number.</div>
+          <div class="abdm-logo-badge">🇮🇳 Government of India Initiative &nbsp;|&nbsp; NHA</div>
+        </div>
+
+        <div class="abdm-steps">
+          <div class="abdm-step">
+            <div class="abdm-step-num">1</div>
+            <h4>Enter ABHA</h4>
+            <p>Patient provides their 14-digit ABHA ID or mobile number</p>
+          </div>
+          <div class="abdm-step">
+            <div class="abdm-step-num">2</div>
+            <h4>OTP Verification</h4>
+            <p>OTP sent to patient's registered Aadhaar-linked mobile</p>
+          </div>
+          <div class="abdm-step">
+            <div class="abdm-step-num">3</div>
+            <h4>Verify &amp; Fetch</h4>
+            <p>Verify OTP to fetch patient's ABHA profile &amp; health records</p>
+          </div>
+          <div class="abdm-step">
+            <div class="abdm-step-num">4</div>
+            <h4>Consent &amp; Link</h4>
+            <p>Patient gives consent and health data is linked to assessment</p>
+          </div>
+        </div>
+
+        <div class="abdm-form-card">
+          <div class="abdm-form-title">ABHA Authentication</div>
+
+          <div class="abdm-tabs">
+            <button class="abdm-tab active" onclick="abdmTab('abha', this)">Via ABHA ID</button>
+            <button class="abdm-tab" onclick="abdmTab('mobile', this)">Via Mobile</button>
+            <button class="abdm-tab" onclick="abdmTab('aadhaar', this)">Via Aadhaar</button>
+          </div>
+
+          <!-- ABHA ID Tab -->
+          <div id="abdm-panel-abha" class="abdm-tab-panel active">
+            <div class="abdm-info-box">
+              <span class="info-icon">ℹ️</span>
+              Enter the patient's 14-digit ABHA (Ayushman Bharat Health Account) number exactly as printed on their ABHA card.
+            </div>
+            <div class="form-group" style="margin-bottom:18px">
+              <label class="form-label">ABHA ID Number <span class="required">*</span></label>
+              <input type="text" id="abdm-abha-input" class="form-input" placeholder="XX-XXXX-XXXX-XXXX"
+                maxlength="17" oninput="formatAbhaInput(this)" style="letter-spacing:2px;font-size:16px;font-weight:600;" />
+              <div class="form-hint">14 digits only — no letters or special characters</div>
+              <div class="form-error" id="abdm-abha-error" style="display:none"></div>
+            </div>
+            <button class="btn btn-primary" onclick="abdmSendOTP('abha')" style="width:100%;justify-content:center">
+              Send OTP to Registered Mobile
+            </button>
+          </div>
+
+          <!-- Mobile Tab -->
+          <div id="abdm-panel-mobile" class="abdm-tab-panel">
+            <div class="form-group" style="margin-bottom:18px">
+              <label class="form-label">Mobile Number <span class="required">*</span></label>
+              <input type="tel" class="form-input" placeholder="10-digit mobile number" maxlength="10"
+                oninput="this.value=this.value.replace(/\D/g,'')" />
+              <div class="form-hint">Aadhaar-linked mobile number</div>
+            </div>
+            <button class="btn btn-primary" onclick="abdmSendOTP('mobile')" style="width:100%;justify-content:center">
+              Send OTP
+            </button>
+          </div>
+
+          <!-- Aadhaar Tab -->
+          <div id="abdm-panel-aadhaar" class="abdm-tab-panel">
+            <div class="abdm-info-box" style="background:#fef3c7;border-color:#fde68a;color:#92400e;">
+              <span class="info-icon">⚠️</span>
+              Aadhaar-based auth uses the ABDM sandbox. For production, ensure compliance with UIDAI regulations and patient consent.
+            </div>
+            <div class="form-group" style="margin-bottom:18px">
+              <label class="form-label">Aadhaar Number <span class="required">*</span></label>
+              <input type="text" class="form-input" placeholder="XXXX XXXX XXXX" maxlength="14"
+                oninput="formatAadhaarInput(this)" style="letter-spacing:2px;" />
+            </div>
+            <button class="btn btn-primary" onclick="abdmSendOTP('aadhaar')" style="width:100%;justify-content:center">
+              Generate OTP via Aadhaar
+            </button>
+          </div>
+
+          <!-- OTP Entry (shown after send) -->
+          <div id="abdm-otp-section" style="display:none;margin-top:24px;padding-top:24px;border-top:1px solid var(--gray-100)">
+            <div class="form-label" style="margin-bottom:10px">Enter 6-digit OTP sent to ••••••0987</div>
+            <div class="otp-grid">
+              <input class="otp-input" type="text" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)" />
+              <input class="otp-input" type="text" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)" />
+              <input class="otp-input" type="text" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)" />
+              <input class="otp-input" type="text" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)" />
+              <input class="otp-input" type="text" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)" />
+              <input class="otp-input" type="text" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)" />
+            </div>
+            <div style="display:flex;gap:10px;margin-top:4px">
+              <button class="btn btn-primary" onclick="abdmVerifyOTP()" style="flex:1;justify-content:center">
+                Verify &amp; Authenticate
+              </button>
+              <button class="btn btn-secondary" onclick="abdmResendOTP()">Resend</button>
+            </div>
+          </div>
+
+          <!-- Success State (shown after verify) -->
+          <div id="abdm-success" style="display:none;margin-top:24px;padding:20px;background:var(--green-lt);border-radius:var(--radius-md);border:1px solid #bbf7d0">
+            <div style="font-weight:700;color:#15803d;font-size:15px;margin-bottom:8px">✅ ABHA Verified Successfully</div>
+            <div style="font-size:13px;color:#166534" id="abdm-profile-info">Patient profile fetched from ABDM.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ SETTINGS PAGE ════ -->
+      <section id="page-settings" class="page">
+        <div class="page-header">
+          <div class="page-title">Settings</div>
+          <div class="page-subtitle">Manage your MatruAI preferences &amp; account</div>
+        </div>
+
+        <!-- Profile -->
+        <div class="profile-card">
+          <div class="profile-avatar">ANM</div>
+          <div class="profile-info">
+            <h3>Sunita Devi</h3>
+            <p>Primary Health Centre, Pune District</p>
+            <div class="profile-badge">👩‍⚕️ Auxiliary Nurse Midwife</div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Preferences</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-icon">🌐</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">Language</div>
+                <div class="settings-row-desc">Switch between English and Hindi</div>
+              </div>
+              <button class="lang-btn" onclick="toggleLang()" id="settings-lang-btn">हिं</button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-icon">📳</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">Notifications</div>
+                <div class="settings-row-desc">Alert on high-risk detections</div>
+              </div>
+              <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-icon">🌙</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">Dark Mode</div>
+                <div class="settings-row-desc">Coming soon</div>
+              </div>
+              <button class="toggle" disabled style="opacity:.4"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Offline &amp; Sync</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-icon">💾</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">Offline Storage</div>
+                <div class="settings-row-desc">IndexedDB &amp; localStorage active</div>
+              </div>
+              <span style="font-size:12px;color:#15803d;font-weight:700">Enabled</span>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-icon">☁️</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">Auto Cloud Sync</div>
+                <div class="settings-row-desc">Sync when internet is detected</div>
+              </div>
+              <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+            </div>
+            <div class="settings-row" style="cursor:pointer" onclick="manualSync()">
+              <div class="settings-row-icon">🔄</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">Manual Sync Now</div>
+                <div class="settings-row-desc" id="last-sync-text">Last synced: Just now</div>
+              </div>
+              <span style="font-size:18px;color:var(--gray-400)">›</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Data &amp; Privacy</div>
+          <div class="settings-card">
+            <div class="settings-row" style="cursor:pointer" onclick="exportCSV()">
+              <div class="settings-row-icon">⬇️</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">Export All Data</div>
+                <div class="settings-row-desc">Download as CSV file</div>
+              </div>
+              <span style="font-size:18px;color:var(--gray-400)">›</span>
+            </div>
+            <div class="settings-row" style="cursor:pointer" onclick="clearData()">
+              <div class="settings-row-icon">🗑️</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">Clear Local Data</div>
+                <div class="settings-row-desc">Remove all locally stored records</div>
+              </div>
+              <span style="font-size:18px;color:var(--red)">›</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">About</div>
+          <div class="settings-card">
+            <div class="settings-row">
+              <div class="settings-row-icon">ℹ️</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">MatruAI</div>
+                <div class="settings-row-desc">Version 2.0.0 — Maternal &amp; Neonatal Clinical Decision Support</div>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-icon">🏛️</div>
+              <div class="settings-row-info">
+                <div class="settings-row-label">ABDM Compliant</div>
+                <div class="settings-row-desc">Ayushman Bharat Digital Mission integration</div>
+              </div>
+              <span style="background:var(--teal-lt);color:var(--teal-dk);padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700">Active</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main><!-- end main-content -->
+  </div><!-- end body-wrap -->
+
+  <!-- Bottom Nav (Mobile) -->
+  <nav id="bottom-nav">
+    <button class="bottom-nav-btn active" data-page="dashboard" onclick="navigate('dashboard',this)">
+      <div class="bnb-icon">🏠</div><span>Home</span>
+    </button>
+    <button class="bottom-nav-btn" data-page="assessment" onclick="navigate('assessment',this)">
+      <div class="bnb-icon">📋</div><span>Assess</span>
+    </button>
+    <button class="bottom-nav-btn" data-page="patients" onclick="navigate('patients',this)">
+      <div class="bnb-icon">👥</div><span>Patients</span>
+    </button>
+    <button class="bottom-nav-btn" data-page="abdm" onclick="navigate('abdm',this)">
+      <div class="bnb-icon">🏛️</div><span>ABDM</span>
+    </button>
+    <button class="bottom-nav-btn" data-page="settings" onclick="navigate('settings',this)">
+      <div class="bnb-icon">⚙️</div><span>Settings</span>
+    </button>
+  </nav>
+
+</div><!-- end app -->
+
+<script>
+/* ================================================================
+   MatruAI — Complete Application Logic
+   Sections:
+   1. State Management & Storage (offline-first with IndexedDB)
+   2. Network Status & Auto-Sync
+   3. Toast Notification System
+   4. Navigation
+   5. Dashboard
+   6. Assessment Wizard
+   7. Patients / Data Sheet & CSV Export
+   8. ABDM / OTP helpers
+   9. Settings helpers
+   10. Language toggle
+   11. Boot
+================================================================ */
+
+/* ─── 1. State ─────────────────────────────────────────────────── */
+const DB_NAME   = 'matruai_db';
+const DB_VER    = 1;
+const STORE_KEY = 'matruai_assessments';   // localStorage fallback key
+
+let db           = null;     // IndexedDB instance
+let currentPage  = 'dashboard';
+let wizardType   = 'antenatal';  // 'antenatal' | 'neonatal'
+let wizardStep   = 0;
+let wizardData   = {};
+let currentFilter = 'all';
+let currentLang  = 'en';     // 'en' | 'hi'
+
+// User & Authentication
+let currentUser  = null;     // Logged-in user {name, role}
+let isLoggedIn   = false;    // Authentication status
+let isEditingRecord = false; // Flag for editing previous assessments
+
+// Store original dashboard HTML for restoration after login form display
+let originalDashboardHTML = null;
+
+/* ─── Translations (i18n) ──────────────────────────────────────── */
+const translations = {
+  en: {
+    // Header & Navigation
+    dashboard: 'Dashboard',
+    newAssessment: 'New Assessment',
+    patientsData: 'Patients & Data',
+    abdm: 'ABDM / ABHA',
+    settings: 'Settings',
+    logout: 'Logout',
+    
+    // Login Page
+    login: 'Login',
+    userRole: 'User Role',
+    anm: 'ANM (Auxiliary Nurse Midwife)',
+    mo: 'MO (Medical Officer)',
+    username: 'Username',
+    password: 'Password',
+    signIn: 'Sign In',
+    invalidCredentials: 'Invalid username or password',
+    loginRequired: 'Please login to continue',
+    matruAI: 'MatruAI',
+    clinicalDecisionSupport: 'Clinical Decision Support for Maternal & Neonatal Health',
+    
+    // Dashboard
+    goodMorning: 'Good morning',
+    goodAfternoon: 'Good afternoon',
+    goodEvening: 'Good evening',
+    startAssessment: 'Start an assessment or review recent patients',
+    totalAssessments: 'Total Assessments',
+    highRisk: 'High Risk',
+    pendingSync: 'Pending Sync',
+    synced: 'Synced',
+    allTime: 'All time',
+    needsAttention: 'Needs attention',
+    inLocalStorage: 'In local storage',
+    inCloud: 'In cloud',
+    quickActions: 'Quick Actions',
+    
+    // Assessment Types
+    antenatalAssessment: 'Antenatal Assessment',
+    neonatalAssessment: 'Neonatal Assessment',
+    maternalRiskScreening: 'Maternal risk screening for pregnant women',
+    newbornHealthEvaluation: 'Newborn health evaluation and risk scoring',
+    
+    // Buttons & Actions
+    continue: 'Continue →',
+    cancel: '✕ Cancel',
+    previous: '← Previous',
+    finish: '✅ Save & Finish',
+    startNew: 'Start New',
+    
+    // Form Fields
+    patientDetails: 'Patient Details',
+    name: 'Full Name',
+    age: 'Age (years)',
+    dob: 'Date of Birth',
+    phone: 'Phone Number',
+    village: 'Village / Location',
+    abhaId: 'ABHA ID (optional)',
+    vitalSigns: 'Vital Signs',
+    bloodPressure: 'Blood Pressure (mmHg)',
+    temperature: 'Temperature (°C)',
+    pulse: 'Pulse Rate (bpm)',
+    pregnancyDetails: 'Pregnancy Details',
+    gestationWeeks: 'Gestation (weeks)',
+    contraindications: 'Contraindications',
+    muac: 'MUAC (cm)',
+    fhs: 'Foetal Heart Sound (bpm)',
+    symptomsWarning: 'Symptoms & Warning Signs',
+    symptoms: 'Select any symptoms present',
+    results: 'Results',
+    
+    // Messages
+    assessmentCompleted: 'Assessment completed successfully',
+    dataSaved: 'Data saved successfully',
+    loggedInAs: 'Logged in as',
+    online: 'Online',
+    offline: 'Offline',
+    connected: 'Connected',
+    allDataSynced: 'All data synced to cloud',
+  },
+  hi: {
+    // Header & Navigation
+    dashboard: 'डैशबोर्ड',
+    newAssessment: 'नया मूल्यांकन',
+    patientsData: 'रोगी और डेटा',
+    abdm: 'एबीडीएम / अभा',
+    settings: 'सेटिंग्स',
+    logout: 'लॉगआउट',
+    
+    // Login Page
+    login: 'लॉगिन',
+    userRole: 'उपयोगकर्ता भूमिका',
+    anm: 'एएनएम (सहायक नर्स दाई)',
+    mo: 'एमओ (चिकित्सा अधिकारी)',
+    username: 'उपयोगकर्ता नाम',
+    password: 'पासवर्ड',
+    signIn: 'साइन इन करें',
+    invalidCredentials: 'अमान्य उपयोगकर्ता नाम या पासवर्ड',
+    loginRequired: 'जारी रखने के लिए कृपया लॉगिन करें',
+    matruAI: 'मात्रुआई',
+    clinicalDecisionSupport: 'मातृ और नवजात स्वास्थ्य के लिए नैदानिक निर्णय समर्थन',
+    
+    // Dashboard
+    goodMorning: 'सुप्रभात',
+    goodAfternoon: 'नमस्ते',
+    goodEvening: 'शुभ संध्या',
+    startAssessment: 'एक मूल्यांकन शुरू करें या हाल के रोगियों की समीक्षा करें',
+    totalAssessments: 'कुल मूल्यांकन',
+    highRisk: 'उच्च जोखिम',
+    pendingSync: 'प्रतीक्षारत सिंक',
+    synced: 'सिंक किया गया',
+    allTime: 'सभी समय',
+    needsAttention: 'ध्यान देने की जरूरत है',
+    inLocalStorage: 'स्थानीय संग्रहण में',
+    inCloud: 'क्लाउड में',
+    quickActions: 'त्वरित कार्य',
+    
+    // Assessment Types
+    antenatalAssessment: 'प्रसवपूर्व मूल्यांकन',
+    neonatalAssessment: 'नवजात मूल्यांकन',
+    maternalRiskScreening: 'गर्भवती महिलाओं के लिए मातृ जोखिम स्क्रीनिंग',
+    newbornHealthEvaluation: 'नवजात स्वास्थ्य मूल्यांकन और जोखिम स्कोरिंग',
+    
+    // Buttons & Actions
+    continue: 'जारी रखें →',
+    cancel: '✕ रद्द करें',
+    previous: '← पिछला',
+    finish: '✅ सहेजें और समाप्त करें',
+    startNew: 'नया शुरू करें',
+    
+    // Form Fields
+    patientDetails: 'रोगी विवरण',
+    name: 'पूरा नाम',
+    age: 'आयु (वर्ष)',
+    dob: 'जन्म की तारीख',
+    phone: 'फोन नंबर',
+    village: 'गांव / स्थान',
+    abhaId: 'अभा आईडी (वैकल्पिक)',
+    vitalSigns: 'महत्वपूर्ण संकेत',
+    bloodPressure: 'रक्तचाप (mmHg)',
+    temperature: 'तापमान (°C)',
+    pulse: 'पल्स दर (bpm)',
+    pregnancyDetails: 'गर्भावस्था विवरण',
+    gestationWeeks: 'गर्भकाल (सप्ताह)',
+    contraindications: 'मतभेद',
+    muac: 'मुएसी (सेमी)',
+    fhs: 'फीटल हार्ट साउंड (bpm)',
+    symptomsWarning: 'लक्षण और चेतावनी संकेत',
+    symptoms: 'मौजूद किसी भी लक्षण का चयन करें',
+    results: 'परिणाम',
+    
+    // Messages
+    assessmentCompleted: 'मूल्यांकन सफलतापूर्वक पूर्ण',
+    dataSaved: 'डेटा सफलतापूर्वक सहेजा गया',
+    loggedInAs: 'इस रूप में लॉगिन किया गया',
+    online: 'ऑनलाइन',
+    offline: 'ऑफलाइन',
+    connected: 'जुड़ा हुआ',
+    allDataSynced: 'सभी डेटा क्लाउड में सिंक किया गया',
+  }
+};
+
+function t(key) {
+  return translations[currentLang]?.[key] || translations['en']?.[key] || key;
+}
+
+/* ─── Open IndexedDB ──────────────────────────────────────────── */
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) { resolve(null); return; }
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => { db = req.result; resolve(db); };
+    req.onupgradeneeded = (e) => {
+      const database = e.target.result;
+      if (!database.objectStoreNames.contains('assessments')) {
+        const store = database.createObjectStore('assessments', { keyPath: 'id' });
+        store.createIndex('syncStatus', 'syncStatus', { unique: false });
+        store.createIndex('type',       'type',       { unique: false });
+        store.createIndex('createdAt',  'createdAt',  { unique: false });
+      }
+    };
+  });
+}
+
+/* ─── Save record (IndexedDB with localStorage fallback) ───────── */
+async function saveRecord(record) {
+  // Always write to localStorage as backup
+  const all = getLocalRecords();
+  const idx = all.findIndex(r => r.id === record.id);
+  if (idx >= 0) all[idx] = record; else all.push(record);
+  localStorage.setItem(STORE_KEY, JSON.stringify(all));
+
+  // Also write to IndexedDB
+  if (db) {
+    await new Promise((res, rej) => {
+      const tx    = db.transaction('assessments', 'readwrite');
+      const store = tx.objectStore('assessments');
+      const req   = store.put(record);
+      req.onsuccess = res; req.onerror = rej;
+    }).catch(() => {/* silently fallback */});
+  }
+}
+
+/* ─── Get all records ──────────────────────────────────────────── */
+async function getAllRecords() {
+  if (db) {
+    try {
+      return await new Promise((res, rej) => {
+        const tx    = db.transaction('assessments', 'readonly');
+        const store = tx.objectStore('assessments');
+        const req   = store.getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror   = rej;
+      });
+    } catch(e) { /* fallthrough */ }
+  }
+  return getLocalRecords();
+}
+
+function getLocalRecords() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+/* ─── Get single record by ID ──────────────────────────────────── */
+async function getRecord(id) {
+  const all = await getAllRecords();
+  return all.find(r => r.id === id) || null;
+}
+
+/* ─── 2. Network Status & Auto-Sync ────────────────────────────── */
+let isOnline = navigator.onLine;
+
+function updateNetworkUI(online) {
+  isOnline = online;
+  const pill    = document.getElementById('status-pill');
+  const txt     = document.getElementById('status-text');
+  const dot     = pill.querySelector('.status-dot');
+  const sidebar = document.getElementById('sidebar-sync-status');
+
+  if (online) {
+    pill.className = 'status-pill online';
+    txt.textContent = 'Online';
+    sidebar.className = 'sidebar-sync-card online-card';
+    sidebar.innerHTML = '<strong>✅ Connected</strong>All data syncing to cloud';
+    autoSync();
+  } else {
+    pill.className = 'status-pill offline';
+    txt.textContent = 'Offline';
+    sidebar.className = 'sidebar-sync-card offline-card';
+    sidebar.innerHTML = '<strong>⚠️ Offline</strong>Data saved locally — will sync when connected';
+  }
+}
+
+/* Auto-sync: mark pending records as synced (simulated) */
+async function autoSync() {
+  const records = await getAllRecords();
+  const pending = records.filter(r => r.syncStatus === 'pending');
+  if (!pending.length) { updateSyncBadge(0); return; }
+
+  // Simulate network call delay then update
+  await new Promise(r => setTimeout(r, 1400));
+  for (const rec of pending) {
+    rec.syncStatus = 'synced';
+    rec.syncedAt   = new Date().toISOString();
+    await saveRecord(rec);
+  }
+  updateSyncBadge(0);
+  showToast(`${pending.length} record${pending.length > 1 ? 's' : ''} synced to cloud`, 'success');
+  refreshStats();
+  document.getElementById('last-sync-text').textContent = 'Last synced: Just now';
+}
+
+function updateSyncBadge(count) {
+  const badge = document.getElementById('sync-badge');
+  const span  = document.getElementById('sync-count');
+  if (count > 0) {
+    badge.style.display = 'flex';
+    span.textContent = `${count} pending`;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+window.addEventListener('online',  () => { updateNetworkUI(true); });
+window.addEventListener('offline', () => { updateNetworkUI(false); });
+
+/* ─── 3. Toast Notifications ────────────────────────────────────── */
+function showToast(msg, type = 'success', duration = 3000) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  const icons  = { success: '✓', warning: '⚠', error: '✕', info: 'ℹ' };
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || '✓'}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('hiding');
+    setTimeout(() => toast.remove(), 350);
+  }, duration);
+}
+
+/* ─── 4. Navigation ─────────────────────────────────────────────── */
+function navigate(page, el) {
+  // Check authentication
+  if (!isLoggedIn && page !== 'login') {
+    navigate('login');
+    return;
+  }
+  
+  // Special: clicking Assessment from nav opens the wizard
+  if (page === 'assessment') {
+    if (currentPage !== 'assessment') startAssessment('antenatal');
+    closeSidebar();
+    return;
+  }
+  
+  currentPage = page;
+
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  
+  // If login page, show it specially without sidebar
+  if (page === 'login') {
+    document.getElementById('header').style.display = 'none';
+    document.getElementById('sidebar').style.display = 'none';
+    const loginDiv = document.getElementById('page-dashboard');
+    loginDiv.innerHTML = renderLoginPage();
+    loginDiv.classList.add('active');
+    return;
+  } else {
+    document.getElementById('header').style.display = 'flex';
+    document.getElementById('sidebar').style.display = 'block';
+  }
+  
+  // Restore dashboard HTML if it was overwritten by login form
+  if (page === 'dashboard' && originalDashboardHTML) {
+    const dashboardEl = document.getElementById('page-dashboard');
+    if (dashboardEl && !dashboardEl.innerHTML.includes('Good morning')) {
+      dashboardEl.innerHTML = originalDashboardHTML;
+    }
+  }
+  
+  document.getElementById(`page-${page}`).classList.add('active');
+
+  // Update sidebar nav
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`.nav-btn[data-page="${page}"]`).forEach(b => b.classList.add('active'));
+
+  // Update bottom nav
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`.bottom-nav-btn[data-page="${page}"]`).forEach(b => b.classList.add('active'));
+
+  closeSidebar();
+
+  if (page === 'patients')   renderPatientsTable();
+  if (page === 'dashboard')  refreshStats();
+}
+
+/* ─── Sidebar helpers ───────────────────────────────────────────── */
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const o = document.getElementById('overlay');
+  s.classList.toggle('open');
+  o.classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+/* ─── 5. Dashboard ──────────────────────────────────────────────── */
+async function refreshStats() {
+  const records = await getAllRecords();
+  const total     = records.length;
+  const highRisk  = records.filter(r => ['high','critical'].includes(r.riskLevel)).length;
+  const pending   = records.filter(r => r.syncStatus === 'pending').length;
+  const synced    = records.filter(r => r.syncStatus === 'synced').length;
+
+  document.getElementById('stat-total').textContent    = total;
+  document.getElementById('stat-highrisk').textContent = highRisk;
+  document.getElementById('stat-pending').textContent  = pending;
+  document.getElementById('stat-synced').textContent   = synced;
+
+  updateSyncBadge(pending);
+  renderRecentPatients(records);
+}
+
+function renderRecentPatients(records) {
+  const container = document.getElementById('recent-patients-list');
+  if (!records.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div><p>No assessments yet</p><small>Complete an assessment to see patients here</small></div>`;
+    return;
+  }
+  const recent = [...records].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5);
+  container.innerHTML = recent.map(r => {
+    const initials = (r.name || '??').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+    const riskClass = `risk-${r.riskLevel || 'low'}`;
+    const riskLabel = (r.riskLevel || 'low').charAt(0).toUpperCase() + (r.riskLevel || 'low').slice(1);
+    const date = new Date(r.createdAt).toLocaleDateString('en-IN', {day:'numeric',month:'short'});
+    return `
+    <div class="patient-row" onclick="editPreviousAssessment('${r.id}')" style="cursor: pointer;">
+      <div class="patient-avatar ${r.type}">${initials}</div>
+      <div class="patient-info">
+        <div class="patient-name">${escapeHtml(r.name)}</div>
+        <div class="patient-meta">${r.type === 'antenatal' ? 'Antenatal' : 'Neonatal'} · ${date}</div>
+      </div>
+      <span class="risk-badge ${riskClass}">${riskLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function greet() {
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('dash-greeting').textContent = `${g} 👋`;
+}
+
+/* ─── 6. Assessment Wizard ──────────────────────────────────────── */
+function startAssessment(type) {
+  wizardType = type;
+  wizardStep = 0;
+  wizardData = {
+    type,
+    name: '', dob: '', age: '', phone: '', abhaId: '',
+    village: '', subCenter: '',
+    systolicBP: '', diastolicBP: '', weight: '', hemoglobin: '',
+    temperature: '', pulseRate: '',
+    gestationalAge: '', gravida: '', para: '', lmpDate: '',
+    fetalHeartRate: '', fetalMovement: 'normal',
+    symptoms: {}
+  };
+  currentPage = 'assessment';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-assessment').classList.add('active');
+  document.querySelectorAll('.nav-btn, .bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('[data-page="assessment"]').forEach(b => b.classList.add('active'));
+
+  document.getElementById('wizard-type-title').textContent = type === 'antenatal' ? 'Antenatal Assessment' : 'Neonatal Assessment';
+  renderWizardStep();
+}
+
+/* ─── Edit Previous Assessment ──────────────────────────────────── */
+async function editPreviousAssessment(recordId) {
+  try {
+    const record = await getRecord(recordId);
+    if (!record) {
+      showToast('Record not found', 'error');
+      return;
+    }
+    
+    // Load previous data into wizard
+    wizardType = record.type;
+    wizardStep = 0;
+    wizardData = {
+      type: record.type,
+      id: record.id,
+      name: record.name || '',
+      dob: record.dob || '',
+      age: record.age || '',
+      phone: record.phone || '',
+      abhaId: record.abhaId || '',
+      village: record.village || '',
+      subCenter: record.subCenter || '',
+      systolicBP: record.systolicBP || '',
+      diastolicBP: record.diastolicBP || '',
+      weight: record.weight || '',
+      hemoglobin: record.hemoglobin || '',
+      temperature: record.temperature || '',
+      pulseRate: record.pulseRate || '',
+      gestationalAge: record.gestationalAge || '',
+      gravida: record.gravida || '',
+      para: record.para || '',
+      lmpDate: record.lmpDate || '',
+      fetalHeartRate: record.fetalHeartRate || '',
+      fetalMovement: record.fetalMovement || 'normal',
+      symptoms: record.symptoms || {}
+    };
+    
+    isEditingRecord = true;
+    currentPage = 'assessment';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-assessment').classList.add('active');
+    document.querySelectorAll('.nav-btn, .bottom-nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('[data-page="assessment"]').forEach(b => b.classList.add('active'));
+
+    document.getElementById('wizard-type-title').textContent = (record.type === 'antenatal' ? 'Edit Antenatal' : 'Edit Neonatal') + ' Assessment';
+    showToast('Editing previous assessment - you can update and save', 'info', 3000);
+    renderWizardStep();
+  } catch(e) {
+    console.error('Error loading record:', e);
+    showToast('Error loading record', 'error');
+  }
+}
+
+/* ─── Wizard steps config ────────────────────────────────────── */
+const ANTENATAL_STEPS = [
+  { id: 'patient',     label: 'Patient',    icon: '👤' },
+  { id: 'vitals',      label: 'Vitals',     icon: '📊' },
+  { id: 'pregnancy',   label: 'Pregnancy',  icon: '🤰' },
+  { id: 'symptoms',    label: 'Symptoms',   icon: '🩺' },
+  { id: 'result',      label: 'Result',     icon: '📋' },
+];
+const NEONATAL_STEPS = [
+  { id: 'patient',     label: 'Baby Info',  icon: '👶' },
+  { id: 'vitals',      label: 'Vitals',     icon: '📊' },
+  { id: 'assessment',  label: 'Assessment', icon: '🩺' },
+  { id: 'result',      label: 'Result',     icon: '📋' },
+];
+
+function getSteps() {
+  return wizardType === 'antenatal' ? ANTENATAL_STEPS : NEONATAL_STEPS;
+}
+
+function renderWizardStep() {
+  const steps = getSteps();
+  document.getElementById('step-num').textContent   = wizardStep + 1;
+  document.getElementById('step-total').textContent = steps.length;
+
+  // Step progress bar
+  let progressHtml = '';
+  steps.forEach((s, i) => {
+    const status = i < wizardStep ? 'done' : i === wizardStep ? 'active' : '';
+    progressHtml += `
+    <div class="step-item">
+      <div class="step-circle ${status}">${i < wizardStep ? '✓' : i+1}</div>
+      <span class="step-label ${status}">${s.label}</span>
+    </div>`;
+    if (i < steps.length - 1) {
+      progressHtml += `<div class="step-connector ${i < wizardStep ? 'done' : ''}"></div>`;
+    }
+  });
+  document.getElementById('step-progress').innerHTML = progressHtml;
+
+  // Content
+  const step = steps[wizardStep];
+  let html = '';
+
+  if (step.id === 'patient') {
+    html = renderPatientStep();
+  } else if (step.id === 'vitals') {
+    html = renderVitalsStep();
+  } else if (step.id === 'pregnancy') {
+    html = renderPregnancyStep();
+  } else if (step.id === 'assessment') {
+    html = renderNeonatalAssessmentStep();
+  } else if (step.id === 'symptoms') {
+    html = renderSymptomsStep();
+  } else if (step.id === 'result') {
+    html = renderResultStep();
+  }
+
+  document.getElementById('wizard-content').innerHTML = html;
+
+  // Footer buttons
+  const isResult = step.id === 'result';
+  document.getElementById('btn-prev').textContent = wizardStep === 0 ? '✕ Cancel' : '← Previous';
+  document.getElementById('btn-next').textContent = isResult ? '✅ Save & Finish' : 'Continue →';
+  document.getElementById('btn-next').style.background = isResult ? '#16a34a' : '';
+
+  // Attach listeners on new DOM
+  attachStepListeners(step.id);
+}
+
+function renderPatientStep() {
+  const isNeo = wizardType === 'neonatal';
+  return `
+  <div class="form-card">
+    <div class="form-card-title"><div class="fct-icon">👤</div>${isNeo ? 'Baby & Mother Details' : 'Patient Details'}</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Full Name <span class="required">*</span></label>
+        <input id="f-name" type="text" class="form-input" placeholder="Letters and spaces only"
+          value="${escapeHtml(wizardData.name)}" oninput="validateName(this)" />
+        <div class="form-error" id="err-name"></div>
+        <div class="form-hint">No numbers or special characters allowed</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date of Birth <span class="required">*</span></label>
+        <input id="f-dob" type="date" class="form-input"
+          value="${wizardData.dob}" max="${new Date().toISOString().split('T')[0]}"
+          oninput="calcAgeFromDOB(this.value)" />
+        <div class="form-error" id="err-dob"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Age (years)</label>
+        <input id="f-age" type="number" class="form-input" placeholder="Auto-calculated from DOB"
+          value="${wizardData.age}" min="10" max="60" readonly style="background:var(--gray-50);cursor:not-allowed" />
+        <div class="form-hint">Calculated automatically from Date of Birth</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mobile Number</label>
+        <input id="f-phone" type="tel" class="form-input" placeholder="10-digit number"
+          value="${escapeHtml(wizardData.phone)}" maxlength="10"
+          oninput="this.value=this.value.replace(/\\D/g,'')" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">ABHA ID</label>
+        <input id="f-abha" type="text" class="form-input" placeholder="14 digits (e.g. 12345678901234)"
+          value="${escapeHtml(wizardData.abhaId)}"
+          oninput="validateAbha(this)" maxlength="14" style="letter-spacing:1px" />
+        <div class="form-error" id="err-abha"></div>
+        <div class="form-hint">Exactly 14 digits — no letters or special characters</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Village / Area</label>
+        <input id="f-village" type="text" class="form-input" placeholder="Village name"
+          value="${escapeHtml(wizardData.village)}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sub-Centre</label>
+        <input id="f-sub" type="text" class="form-input" placeholder="Sub-centre name"
+          value="${escapeHtml(wizardData.subCenter)}" />
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderVitalsStep() {
+  return `
+  <div class="form-card">
+    <div class="form-card-title"><div class="fct-icon">📊</div>Vital Signs</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Systolic BP (mmHg) <span class="required">*</span></label>
+        <input id="f-sbp" type="number" class="form-input" placeholder="e.g. 120"
+          value="${wizardData.systolicBP}" min="60" max="250" />
+        <div class="form-hint">Normal: 90–140 mmHg</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Diastolic BP (mmHg) <span class="required">*</span></label>
+        <input id="f-dbp" type="number" class="form-input" placeholder="e.g. 80"
+          value="${wizardData.diastolicBP}" min="40" max="160" />
+        <div class="form-hint">Normal: 60–90 mmHg</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Weight (kg)</label>
+        <input id="f-weight" type="number" class="form-input" placeholder="e.g. 55"
+          value="${wizardData.weight}" min="20" max="150" step="0.1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hemoglobin (g/dL)</label>
+        <input id="f-hb" type="number" class="form-input" placeholder="e.g. 11.5"
+          value="${wizardData.hemoglobin}" min="3" max="20" step="0.1" />
+        <div class="form-hint">Flag: &lt;11 g/dL is anaemia</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Temperature (°F)</label>
+        <input id="f-temp" type="number" class="form-input" placeholder="e.g. 98.6"
+          value="${wizardData.temperature}" min="90" max="110" step="0.1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pulse Rate (bpm)</label>
+        <input id="f-pulse" type="number" class="form-input" placeholder="e.g. 80"
+          value="${wizardData.pulseRate}" min="40" max="200" />
+        <div class="form-hint">Normal: 60–100 bpm</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderPregnancyStep() {
+  return `
+  <div class="form-card">
+    <div class="form-card-title"><div class="fct-icon">🤰</div>Pregnancy Details</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Gestational Age (weeks) <span class="required">*</span></label>
+        <input id="f-ga" type="number" class="form-input" placeholder="e.g. 28"
+          value="${wizardData.gestationalAge}" min="4" max="44" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gravida (times pregnant)</label>
+        <input id="f-grav" type="number" class="form-input" placeholder="e.g. 2"
+          value="${wizardData.gravida}" min="1" max="20" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Para (live births)</label>
+        <input id="f-para" type="number" class="form-input" placeholder="e.g. 1"
+          value="${wizardData.para}" min="0" max="20" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">LMP Date</label>
+        <input id="f-lmp" type="date" class="form-input" value="${wizardData.lmpDate}"
+          max="${new Date().toISOString().split('T')[0]}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fetal Heart Rate (bpm)</label>
+        <input id="f-fhr" type="number" class="form-input" placeholder="e.g. 140"
+          value="${wizardData.fetalHeartRate}" min="60" max="200" />
+        <div class="form-hint">Normal: 110–160 bpm</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fetal Movement</label>
+        <select id="f-fm" class="form-select">
+          <option value="normal"   ${wizardData.fetalMovement === 'normal'   ? 'selected' : ''}>Normal</option>
+          <option value="reduced"  ${wizardData.fetalMovement === 'reduced'  ? 'selected' : ''}>Reduced</option>
+          <option value="absent"   ${wizardData.fetalMovement === 'absent'   ? 'selected' : ''}>Absent</option>
+        </select>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderNeonatalAssessmentStep() {
+  return `
+  <div class="form-card">
+    <div class="form-card-title"><div class="fct-icon">👶</div>Neonatal Assessment</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Birth Weight (kg)</label>
+        <input id="f-bw" type="number" class="form-input" placeholder="e.g. 2.8"
+          value="${wizardData.birthWeight || ''}" min="0.5" max="6" step="0.01" />
+        <div class="form-hint">Low birth weight: &lt;2.5 kg</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">APGAR Score (1 min)</label>
+        <input id="f-apgar" type="number" class="form-input" placeholder="0–10"
+          value="${wizardData.apgar || ''}" min="0" max="10" />
+        <div class="form-hint">Critical: &lt;4, Concern: 4–6, Normal: 7–10</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gestational Age (weeks)</label>
+        <input id="f-nea-ga" type="number" class="form-input" placeholder="e.g. 38"
+          value="${wizardData.gestationalAge || ''}" min="22" max="44" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Temperature (°F)</label>
+        <input id="f-neo-temp" type="number" class="form-input" placeholder="e.g. 98.6"
+          value="${wizardData.temperature || ''}" min="90" max="110" step="0.1" />
+        <div class="form-hint">Hypothermia: &lt;97.7°F</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">SpO₂ (%)</label>
+        <input id="f-spo2" type="number" class="form-input" placeholder="e.g. 96"
+          value="${wizardData.spo2 || ''}" min="50" max="100" />
+        <div class="form-hint">Low if &lt;90%</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Breathing (per min)</label>
+        <input id="f-rr" type="number" class="form-input" placeholder="e.g. 45"
+          value="${wizardData.respRate || ''}" min="10" max="120" />
+        <div class="form-hint">Normal: 30–60/min</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderSymptomsStep() {
+  const symptoms = [
+    { id: 'severeHeadache',      label: 'Severe Headache',         warning: true },
+    { id: 'blurredVision',       label: 'Blurred Vision',          warning: true },
+    { id: 'epigastricPain',      label: 'Epigastric Pain',         warning: true },
+    { id: 'vaginalBleeding',     label: 'Vaginal Bleeding',        warning: true },
+    { id: 'swellingFaceHands',   label: 'Swelling (Face/Hands)',   warning: true },
+    { id: 'convulsions',         label: 'Convulsions',             warning: true },
+    { id: 'fever',               label: 'Fever / Chills',          warning: false },
+    { id: 'reducedMovement',     label: 'Reduced Fetal Movement',  warning: false },
+    { id: 'leakingFluid',        label: 'Leaking Fluid (PV)',      warning: false },
+    { id: 'dysuria',             label: 'Painful Urination',       warning: false },
+    { id: 'paleness',            label: 'Paleness / Pallor',       warning: false },
+    { id: 'breathlessness',      label: 'Breathlessness',          warning: false },
+  ];
+  const items = symptoms.map(s => {
+    const checked = wizardData.symptoms[s.id] ? 'checked' : '';
+    return `
+    <div class="symptom-item ${checked}" onclick="toggleSymptom('${s.id}', this)">
+      <div class="sym-check">${checked ? '✓' : ''}</div>
+      <span class="sym-label">${s.warning ? '⚠ ' : ''}${s.label}</span>
+    </div>`;
+  }).join('');
+  return `
+  <div class="form-card">
+    <div class="form-card-title"><div class="fct-icon">🩺</div>Symptoms &amp; Warning Signs</div>
+    <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px">Select all symptoms that are present. Warning signs (⚠) indicate higher risk.</p>
+    <div class="symptoms-grid">${items}</div>
+  </div>`;
+}
+
+function renderResultStep() {
+  const risk = calcRisk();
+  const riskClass = risk.level;
+  const emoji = { critical:'🔴', high:'🟠', moderate:'🟡', low:'🟢' }[riskClass] || '🟢';
+  return `
+  <div class="result-panel ${riskClass}">
+    <div class="result-title">${emoji} ${risk.label} Risk</div>
+    <div class="result-sub">AI-assisted assessment for ${escapeHtml(wizardData.name || 'this patient')}</div>
+    <div class="result-badge">${emoji}</div>
+  </div>
+  <div class="form-card">
+    <div class="form-card-title"><div class="fct-icon">📋</div>Recommendations</div>
+    <ul class="recommendations-list">
+      ${risk.recommendations.map(r => `
+      <li>
+        <div class="rec-dot ${r.color}"></div>
+        <span>${r.text}</span>
+      </li>`).join('')}
+    </ul>
+  </div>
+  <div class="form-card" style="background:var(--gray-50)">
+    <div class="form-card-title" style="font-size:13px;margin-bottom:12px">Summary</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+      <div><span style="color:var(--gray-500)">Patient:</span> <strong>${escapeHtml(wizardData.name || '—')}</strong></div>
+      <div><span style="color:var(--gray-500)">DOB:</span> <strong>${wizardData.dob || '—'}</strong></div>
+      <div><span style="color:var(--gray-500)">Type:</span> <strong>${wizardType === 'antenatal' ? 'Antenatal' : 'Neonatal'}</strong></div>
+      <div><span style="color:var(--gray-500)">BP:</span> <strong>${wizardData.systolicBP || '—'}/${wizardData.diastolicBP || '—'} mmHg</strong></div>
+      <div><span style="color:var(--gray-500)">ABHA:</span> <strong>${wizardData.abhaId || '—'}</strong></div>
+      <div><span style="color:var(--gray-500)">Village:</span> <strong>${wizardData.village || '—'}</strong></div>
+    </div>
+  </div>`;
+}
+
+/* ─── Risk Calculation ──────────────────────────────────────────── */
+function calcRisk() {
+  let score = 0;
+  const d = wizardData;
+  const symCount = Object.values(d.symptoms || {}).filter(Boolean).length;
+  const dangerSyms = ['severeHeadache','blurredVision','epigastricPain','vaginalBleeding','swellingFaceHands','convulsions'];
+  const dangerCount = dangerSyms.filter(k => d.symptoms && d.symptoms[k]).length;
+
+  // Vital signs scoring
+  const sbp = parseFloat(d.systolicBP);
+  const dbp = parseFloat(d.diastolicBP);
+  const hb  = parseFloat(d.hemoglobin);
+
+  if (!isNaN(sbp)) {
+    if (sbp >= 160 || dbp >= 110) score += 40;
+    else if (sbp >= 140 || dbp >= 90) score += 20;
+    else if (sbp < 90) score += 15;
+  }
+  if (!isNaN(hb)) {
+    if (hb < 7)  score += 25;
+    else if (hb < 11) score += 10;
+  }
+  score += dangerCount * 15 + symCount * 5;
+
+  // Neonatal extras
+  if (wizardType === 'neonatal') {
+    const bw    = parseFloat(d.birthWeight);
+    const apgar = parseFloat(d.apgar);
+    if (!isNaN(bw) && bw < 1.5) score += 40;
+    else if (!isNaN(bw) && bw < 2.5) score += 20;
+    if (!isNaN(apgar) && apgar < 4) score += 40;
+    else if (!isNaN(apgar) && apgar < 7) score += 20;
+  }
+
+  let level, label, recommendations;
+  if (score >= 60) {
+    level = 'critical'; label = 'Critical';
+    recommendations = [
+      { color: 'red',   text: 'EMERGENCY REFERRAL: Transfer to tertiary hospital immediately.' },
+      { color: 'red',   text: 'Call 108 ambulance or arrange emergency transport right now.' },
+      { color: 'red',   text: 'Administer MgSO₄ if convulsions or BP ≥ 160/110.' },
+      { color: 'amber', text: 'Do not leave patient unattended. Continuous monitoring required.' },
+      { color: 'teal',  text: 'Document all findings and initiate referral slip.' },
+    ];
+  } else if (score >= 35) {
+    level = 'high'; label = 'High';
+    recommendations = [
+      { color: 'red',   text: 'URGENT: Refer to PHC/CHC/FRU today for evaluation.' },
+      { color: 'red',   text: 'Monitor BP and fetal movements every 4 hours.' },
+      { color: 'amber', text: 'Initiate iron + calcium supplementation if anaemia detected.' },
+      { color: 'teal',  text: 'Counsel on danger signs and emergency numbers.' },
+    ];
+  } else if (score >= 15) {
+    level = 'moderate'; label = 'Moderate';
+    recommendations = [
+      { color: 'amber', text: 'Schedule follow-up within 2 weeks.' },
+      { color: 'amber', text: 'Monitor hemoglobin and blood pressure at next visit.' },
+      { color: 'green', text: 'Continue iron, folic acid and calcium supplementation.' },
+      { color: 'teal',  text: 'Educate on nutrition and birth preparedness.' },
+    ];
+  } else {
+    level = 'low'; label = 'Low';
+    recommendations = [
+      { color: 'green', text: 'Routine ANC visit as scheduled.' },
+      { color: 'green', text: 'Continue supplements and nutritional guidance.' },
+      { color: 'teal',  text: 'Educate on birth preparedness and danger signs.' },
+      { color: 'teal',  text: 'Schedule next visit in 4 weeks or per protocol.' },
+    ];
+  }
+  return { level, label, recommendations, score };
+}
+
+/* ─── Wizard prev/next ─────────────────────────────────────────── */
+function wizardPrev() {
+  if (wizardStep === 0) {
+    navigate('dashboard', document.querySelector('[data-page=dashboard]'));
+    return;
+  }
+  collectStepData();
+  wizardStep--;
+  renderWizardStep();
+}
+
+function wizardNext() {
+  const steps = getSteps();
+  if (!validateCurrentStep()) return;
+  collectStepData();
+
+  if (wizardStep === steps.length - 1) {
+    // Final save
+    finishAssessment();
+    return;
+  }
+  wizardStep++;
+  renderWizardStep();
+}
+
+function collectStepData() {
+  const v = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const steps = getSteps();
+  const step  = steps[wizardStep];
+
+  if (step.id === 'patient') {
+    wizardData.name      = v('f-name');
+    wizardData.dob       = v('f-dob');
+    wizardData.age       = v('f-age');
+    wizardData.phone     = v('f-phone');
+    wizardData.abhaId    = v('f-abha');
+    wizardData.village   = v('f-village');
+    wizardData.subCenter = v('f-sub');
+  } else if (step.id === 'vitals') {
+    wizardData.systolicBP  = v('f-sbp');
+    wizardData.diastolicBP = v('f-dbp');
+    wizardData.weight      = v('f-weight');
+    wizardData.hemoglobin  = v('f-hb');
+    wizardData.temperature = v('f-temp');
+    wizardData.pulseRate   = v('f-pulse');
+    // neonatal variations
+    if (document.getElementById('f-neo-temp')) {
+      wizardData.temperature = v('f-neo-temp');
+      wizardData.spo2        = v('f-spo2');
+      wizardData.respRate    = v('f-rr');
+    }
+  } else if (step.id === 'pregnancy') {
+    wizardData.gestationalAge = v('f-ga');
+    wizardData.gravida         = v('f-grav');
+    wizardData.para            = v('f-para');
+    wizardData.lmpDate         = v('f-lmp');
+    wizardData.fetalHeartRate  = v('f-fhr');
+    wizardData.fetalMovement   = v('f-fm');
+  } else if (step.id === 'assessment') {
+    wizardData.birthWeight    = v('f-bw');
+    wizardData.apgar          = v('f-apgar');
+    wizardData.gestationalAge = v('f-nea-ga');
+    wizardData.temperature    = v('f-neo-temp');
+    wizardData.spo2           = v('f-spo2');
+    wizardData.respRate       = v('f-rr');
+  }
+}
+
+function validateCurrentStep() {
+  const steps = getSteps();
+  const step  = steps[wizardStep];
+  let valid = true;
+
+  if (step.id === 'patient') {
+    const nameEl = document.getElementById('f-name');
+    const abhaEl = document.getElementById('f-abha');
+    const dobEl  = document.getElementById('f-dob');
+
+    if (!nameEl || !nameEl.value.trim()) {
+      showFieldError('err-name', 'Patient name is required');
+      if (nameEl) nameEl.classList.add('error');
+      valid = false;
+    } else if (!/^[a-zA-Z\s]+$/.test(nameEl.value.trim())) {
+      showFieldError('err-name', 'Name must contain letters and spaces only');
+      nameEl.classList.add('error');
+      valid = false;
+    }
+
+    if (!dobEl || !dobEl.value) {
+      showFieldError('err-dob', 'Date of birth is required');
+      if (dobEl) dobEl.classList.add('error');
+      valid = false;
+    }
+
+    if (abhaEl && abhaEl.value.trim() && abhaEl.value.trim().length !== 14) {
+      showFieldError('err-abha', 'ABHA ID must be exactly 14 digits');
+      abhaEl.classList.add('error');
+      valid = false;
+    }
+  }
+
+  if (step.id === 'vitals') {
+    const sbp = document.getElementById('f-sbp');
+    const dbp = document.getElementById('f-dbp');
+    if (!sbp || !sbp.value) {
+      showToast('Please enter Systolic BP', 'warning');
+      valid = false;
+    } else if (!dbp || !dbp.value) {
+      showToast('Please enter Diastolic BP', 'warning');
+      valid = false;
+    }
+  }
+
+  return valid;
+}
+
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function attachStepListeners(stepId) {
+  if (stepId === 'patient') {
+    // Name validation
+    const nameEl = document.getElementById('f-name');
+    if (nameEl) nameEl.addEventListener('input', () => {
+      nameEl.classList.remove('error');
+      const errEl = document.getElementById('err-name');
+      if (errEl) errEl.style.display = 'none';
+    });
+  }
+}
+
+/* ─── Finish Assessment ─────────────────────────────────────────── */
+async function finishAssessment() {
+  collectStepData();
+  const risk   = calcRisk();
+  
+  // Check if we're editing an existing record or creating new
+  let record;
+  if (isEditingRecord && wizardData.id) {
+    // Update existing record
+    record = await getRecord(wizardData.id);
+    if (!record) {
+      showToast('Record not found', 'error');
+      return;
+    }
+    // Update with new data
+    record.name       = wizardData.name;
+    record.dob        = wizardData.dob;
+    record.age        = wizardData.age;
+    record.abhaId     = wizardData.abhaId;
+    record.phone      = wizardData.phone;
+    record.village    = wizardData.village;
+    record.riskLevel  = risk.level;
+    record.riskScore  = risk.score;
+    record.data       = { ...wizardData };
+    record.syncStatus = isOnline ? 'synced' : 'pending';
+    record.updatedAt  = new Date().toISOString();
+    if (isOnline) record.syncedAt = new Date().toISOString();
+  } else {
+    // Create new record
+    record = {
+      id:         `rec_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+      name:       wizardData.name,
+      dob:        wizardData.dob,
+      age:        wizardData.age,
+      abhaId:     wizardData.abhaId,
+      phone:      wizardData.phone,
+      village:    wizardData.village,
+      type:       wizardType,
+      riskLevel:  risk.level,
+      riskScore:  risk.score,
+      data:       { ...wizardData },
+      syncStatus: isOnline ? 'synced' : 'pending',
+      createdAt:  new Date().toISOString(),
+      syncedAt:   isOnline ? new Date().toISOString() : null,
+    };
+  }
+
+  await saveRecord(record);
+
+  // 🔔 "Data saved" Toast notification
+  const msgType = isEditingRecord ? 'Updated' : 'Saved';
+  showToast(`✅ Data ${msgType.toLowerCase()} successfully`, 'success');
+
+  // Reset editing flag
+  isEditingRecord = false;
+
+  // Small delay then go back to dashboard
+  setTimeout(async () => {
+    await refreshStats();
+    navigate('dashboard', document.querySelector('[data-page=dashboard]'));
+    if (!isOnline) {
+      setTimeout(() => showToast('Offline — data saved locally and will sync when connected', 'warning', 4000), 500);
+    }
+  }, 600);
+}
+
+/* ─── Inline field validators ───────────────────────────────────── */
+function validateName(input) {
+  input.value = input.value.replace(/[^a-zA-Z\s]/g, '');
+}
+
+function validateAbha(input) {
+  input.value = input.value.replace(/\D/g, '').slice(0, 14);
+  const errEl = document.getElementById('err-abha');
+  if (!errEl) return;
+  if (input.value.length > 0 && input.value.length !== 14) {
+    errEl.textContent = `${input.value.length}/14 digits entered`;
+    errEl.style.display = 'block';
+    input.classList.add('error');
+  } else {
+    errEl.style.display = 'none';
+    input.classList.remove('error');
+  }
+}
+
+function calcAgeFromDOB(dob) {
+  if (!dob) return;
+  const birthDate = new Date(dob);
+  const today     = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+  const ageEl = document.getElementById('f-age');
+  if (ageEl) {
+    ageEl.value = age >= 0 ? age : '';
+    wizardData.age = ageEl.value;
+  }
+}
+
+function toggleSymptom(id, el) {
+  if (!wizardData.symptoms) wizardData.symptoms = {};
+  wizardData.symptoms[id] = !wizardData.symptoms[id];
+  el.classList.toggle('checked');
+  const check = el.querySelector('.sym-check');
+  if (check) check.textContent = wizardData.symptoms[id] ? '✓' : '';
+}
+
+/* ─── 7. Patients / Data Sheet ──────────────────────────────────── */
+async function renderPatientsTable(filterOvr) {
+  const all     = await getAllRecords();
+  const search  = (document.getElementById('search-input') || {}).value || '';
+  const filter  = filterOvr || currentFilter;
+
+  const filtered = all.filter(r => {
+    const matchSearch = !search || (r.name || '').toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === 'all'
+      || (filter === 'antenatal' && r.type === 'antenatal')
+      || (filter === 'neonatal'  && r.type === 'neonatal')
+      || (filter === 'high-risk' && ['high','critical'].includes(r.riskLevel));
+    return matchSearch && matchFilter;
+  }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const tbody = document.getElementById('patients-tbody');
+  if (!tbody) return;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">🗂️</div><p>No records found</p><small>Try a different filter or search term</small></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r => {
+    const date = new Date(r.createdAt).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
+    const riskClass = `risk-${r.riskLevel || 'low'}`;
+    const riskLabel = (r.riskLevel || 'low').charAt(0).toUpperCase() + (r.riskLevel || 'low').slice(1);
+    const syncClass = r.syncStatus || 'pending';
+    const syncLabel = syncClass === 'synced' ? 'Synced' : syncClass === 'pending' ? 'Pending' : 'Failed';
+    return `<tr onclick="editPreviousAssessment('${r.id}')" style="cursor: pointer; transition: background-color 0.2s;\" onmouseover="this.style.backgroundColor='var(--gray-50)'" onmouseout="this.style.backgroundColor=''">
+      <td><strong>${escapeHtml(r.name || '—')}</strong></td>
+      <td>${r.dob || '—'}</td>
+      <td style="letter-spacing:1px;font-size:12px">${r.abhaId || '—'}</td>
+      <td><span style="text-transform:capitalize">${r.type || '—'}</span></td>
+      <td><span class="risk-badge ${riskClass}">${riskLabel}</span></td>
+      <td>${date}</td>
+      <td><span class="sync-tag ${syncClass}">${syncLabel}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterPatients() {
+  renderPatientsTable();
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderPatientsTable();
+}
+
+/* ─── CSV Export ──────────────────────────────────────────────── */
+async function exportCSV() {
+  const records = await getAllRecords();
+  if (!records.length) { showToast('No data to export', 'warning'); return; }
+
+  const headers = ['ID','Name','DOB','Age','ABHA ID','Phone','Village','Sub-Centre','Type','Risk Level','Risk Score','Created At','Sync Status'];
+  const rows = records.map(r => [
+    r.id, r.name || '', r.dob || '', r.age || '',
+    r.abhaId || '', r.phone || '', r.village || '',
+    (r.data && r.data.subCenter) || '',
+    r.type, r.riskLevel || '', r.riskScore || '',
+    new Date(r.createdAt).toLocaleString('en-IN'),
+    r.syncStatus || ''
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`));
+
+  const csv  = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `matruai_data_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exported successfully', 'success');
+}
+
+/* ─── 8. ABDM / OTP Helpers ─────────────────────────────────────── */
+function abdmTab(tab, el) {
+  document.querySelectorAll('.abdm-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.abdm-tab-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(`abdm-panel-${tab}`).classList.add('active');
+  // Hide OTP and success sections when switching tabs
+  document.getElementById('abdm-otp-section').style.display = 'none';
+  document.getElementById('abdm-success').style.display = 'none';
+}
+
+function abdmSendOTP(method) {
+  // Validate ABHA if that method
+  if (method === 'abha') {
+    const val = (document.getElementById('abdm-abha-input') || {}).value || '';
+    const clean = val.replace(/[-\s]/g,'');
+    if (clean.length !== 14) {
+      const errEl = document.getElementById('abdm-abha-error');
+      errEl.textContent = 'ABHA ID must be exactly 14 digits';
+      errEl.style.display = 'block';
+      return;
+    }
+    document.getElementById('abdm-abha-error').style.display = 'none';
+  }
+  document.getElementById('abdm-otp-section').style.display = 'block';
+  document.getElementById('abdm-success').style.display = 'none';
+  showToast('OTP sent to registered mobile number', 'success');
+  // Focus first OTP input
+  const inputs = document.querySelectorAll('.otp-input');
+  if (inputs[0]) inputs[0].focus();
+}
+
+function abdmVerifyOTP() {
+  const inputs = document.querySelectorAll('.otp-input');
+  const otp = Array.from(inputs).map(i => i.value).join('');
+  if (otp.length !== 6) { showToast('Please enter all 6 OTP digits', 'warning'); return; }
+  inputs.forEach(i => { i.classList.add('filled'); });
+  document.getElementById('abdm-otp-section').style.display = 'none';
+  document.getElementById('abdm-success').style.display = 'block';
+  const abhaVal = (document.getElementById('abdm-abha-input') || {}).value || 'XXXX-XXXX-XXXX-XX';
+  document.getElementById('abdm-profile-info').innerHTML =
+    `<strong>ABHA:</strong> ${escapeHtml(abhaVal)}<br><strong>Name:</strong> As per ABDM records<br><strong>Status:</strong> Verified &amp; Linked`;
+  showToast('ABHA authenticated successfully', 'success');
+}
+
+function abdmResendOTP() {
+  showToast('OTP resent to registered mobile', 'success');
+}
+
+function formatAbhaInput(input) {
+  // Remove non-digits
+  input.value = input.value.replace(/\D/g, '').slice(0, 14);
+}
+
+function formatAadhaarInput(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 12);
+  input.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+}
+
+function otpNext(input) {
+  input.value = input.value.replace(/\D/g,'');
+  if (input.value && input.nextElementSibling && input.nextElementSibling.classList.contains('otp-input')) {
+    input.nextElementSibling.focus();
+  }
+}
+
+function otpBack(e, input) {
+  if (e.key === 'Backspace' && !input.value && input.previousElementSibling && input.previousElementSibling.classList.contains('otp-input')) {
+    input.previousElementSibling.focus();
+  }
+}
+
+/* ─── 9. Settings Helpers ────────────────────────────────────────── */
+function manualSync() {
+  if (!isOnline) { showToast('No internet connection. Cannot sync now.', 'warning'); return; }
+  showToast('Syncing data…', 'info', 1500);
+  autoSync();
+}
+
+function clearData() {
+  if (!confirm('Clear all locally stored assessment data? This cannot be undone.')) return;
+  localStorage.removeItem(STORE_KEY);
+  if (db) {
+    const tx = db.transaction('assessments', 'readwrite');
+    tx.objectStore('assessments').clear();
+  }
+  showToast('Local data cleared', 'success');
+  refreshStats();
+}
+
+/* ─── 10. Authentication ──────────────────────────────────────────── */
+const VALID_CREDENTIALS = {
+  anm: { password: 'anm123', role: 'ANM' },
+  mo: { password: 'mo123', role: 'MO (Medical Officer)' }
+};
+
+function renderLoginPage() {
+  return `
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-header">
+          <h1 class="app-title">${t('matruAI')}</h1>
+          <p class="app-subtitle">${t('clinicalDecisionSupport')}</p>
+        </div>
+        
+        <form onsubmit="handleLogin(event)" class="login-form">
+          <div class="form-group">
+            <label>${t('userRole')} *</label>
+            <select id="role-select" required>
+              <option value="">-- ${t('userRole')} --</option>
+              <option value="anm">${t('anm')}</option>
+              <option value="mo">${t('mo')}</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>${t('username')} *</label>
+            <input type="text" id="login-username" placeholder="Enter username" required/>
+          </div>
+          
+          <div class="form-group">
+            <label>${t('password')} *</label>
+            <input type="password" id="login-password" placeholder="Enter password" required/>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" style="width:100%; margin-top:20px;">
+            ${t('signIn')}
+          </button>
+        </form>
+        
+        <div class="login-demo-hint">
+          <p style="font-size:0.85rem; color:#666; margin-top:20px;">
+            Demo Credentials:<br/>
+            ANM: anm / anm123<br/>
+            MO: mo / mo123
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const role = document.getElementById('role-select').value;
+  const username = document.getElementById('login-username').value;
+  const password = document.getElementById('login-password').value;
+  
+  const cred = VALID_CREDENTIALS[role];
+  if (!cred || username !== role || password !== cred.password) {
+    showToast(t('invalidCredentials'), 'error', 3000);
+    return;
+  }
+  
+  // Login successful
+  currentUser = { name: username, role: cred.role };
+  isLoggedIn = true;
+  localStorage.setItem('matruai_user', JSON.stringify(currentUser));
+  showToast(`${t('loggedInAs')} ${currentUser.name}`, 'success', 2000);
+  
+  // Redirect to dashboard
+  navigate('dashboard');
+}
+
+function logout() {
+  if (!confirm('Are you sure you want to logout?')) return;
+  currentUser = null;
+  isLoggedIn = false;
+  localStorage.removeItem('matruai_user');
+  navigate('login');
+  showToast('Logged out successfully', 'success', 2000);
+}
+
+/* ─── 11. Language Toggle with UI Update ──────────────────────────── */
+function toggleLang() {
+  currentLang = currentLang === 'en' ? 'hi' : 'en';
+  localStorage.setItem('matruai_lang', currentLang);
+  
+  // Update button label
+  const label = currentLang === 'en' ? 'हिं' : 'EN';
+  document.querySelectorAll('#lang-btn, #settings-lang-btn').forEach(b => {
+    if (b) b.querySelector('span') ? b.querySelector('span').textContent = label : (b.textContent = label);
+  });
+  
+  // Reload page to apply translations to all UI elements
+  location.reload();
+}
+
+/* ─── Utility ───────────────────────────────────────────────────── */
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─── Add sample data (for demo purposes) ──────────────────────── */
+async function addSampleDataIfEmpty() {
+  const all = await getAllRecords();
+  if (all.length > 0) return;
+  const samples = [
+    { name:'Priya Sharma',    dob:'1996-03-14', abhaId:'12345678901234', type:'antenatal', riskLevel:'low',      riskScore:8,  village:'Hadapsar',   phone:'9876543210' },
+    { name:'Kavitha Devi',    dob:'1994-07-22', abhaId:'98765432109876', type:'antenatal', riskLevel:'high',     riskScore:48, village:'Wagholi',    phone:'9765432109' },
+    { name:'Sunita Rao',      dob:'1999-11-05', abhaId:'',              type:'neonatal',  riskLevel:'moderate', riskScore:22, village:'Kothrud',    phone:'9654321098' },
+    { name:'Baby of Meena',   dob:'2026-04-15', abhaId:'',              type:'neonatal',  riskLevel:'critical', riskScore:72, village:'Bhosari',    phone:'9543210987' },
+    { name:'Rekha Patil',     dob:'1997-08-30', abhaId:'45678901234567', type:'antenatal', riskLevel:'low',      riskScore:5,  village:'Pimpri',     phone:'9432109876' },
+  ];
+  for (const s of samples) {
+    await saveRecord({
+      id:         `rec_demo_${Math.random().toString(36).slice(2)}`,
+      name:       s.name, dob: s.dob, abhaId: s.abhaId,
+      phone:      s.phone, village: s.village, age: '',
+      type:       s.type, riskLevel: s.riskLevel, riskScore: s.riskScore,
+      data:       s,
+      syncStatus: Math.random() > 0.4 ? 'synced' : 'pending',
+      createdAt:  new Date(Date.now() - Math.random()*7*24*60*60*1000).toISOString(),
+    });
+  }
+}
+
+/* ─── 12. Boot ───────────────────────────────────────────────────── */
+async function boot() {
+  // Save original dashboard HTML before anything overwrites it
+  if (!originalDashboardHTML) {
+    const dashboardEl = document.getElementById('page-dashboard');
+    if (dashboardEl) {
+      originalDashboardHTML = dashboardEl.innerHTML;
+    }
+  }
+
+  // Restore language preference
+  const savedLang = localStorage.getItem('matruai_lang');
+  if (savedLang) currentLang = savedLang;
+  
+  // Restore user session
+  const savedUser = localStorage.getItem('matruai_user');
+  if (savedUser) {
+    try {
+      currentUser = JSON.parse(savedUser);
+      isLoggedIn = true;
+      // Update user info in header
+      document.getElementById('user-name').textContent = `${t('loggedInAs')} ${currentUser.name} • `;
+      document.getElementById('user-role').textContent = currentUser.role;
+      document.getElementById('user-info').style.display = 'inline';
+      document.getElementById('logout-btn').style.display = 'inline-block';
+    } catch(e) {
+      isLoggedIn = false;
+      currentUser = null;
+    }
+  }
+  
+  if (!isLoggedIn) {
+    navigate('login');
+    return;
+  }
+  
+  try { await openDB(); } catch(e) { /* use localStorage */ }
+  await addSampleDataIfEmpty();
+  greet();
+  updateNetworkUI(navigator.onLine);
+  await refreshStats();
+  navigate('dashboard');
+  // Periodic sync check
+  setInterval(async () => {
+    if (isOnline) {
+      const all = await getAllRecords();
+      updateSyncBadge(all.filter(r => r.syncStatus === 'pending').length);
+    }
+  }, 10000);
+}
+
+boot();
+</script>
+</body>
+</html>
